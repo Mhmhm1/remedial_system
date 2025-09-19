@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Remedial System{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'lessons/css/dashboard.css' %}">
+</head>
+<body>
+    <nav>
+        <a href="{% url 'teacher_dashboard' %}">Dashboard</a>
+     
+        <a href="{% url 'logout' %}">Logout</a>
+    </nav>
+
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-k6RqeWeci5ZR/Lv4MR0sA0FfDOM4B+u0nR+Zf9VHgVv+uU1l/1L8zS1lB5QJ6vZ6VfJ3Fb6FAoP7TfZAGlqRQA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+</body>
+</html>

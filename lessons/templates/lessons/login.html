@@ -1,0 +1,45 @@
+{% extends "lessons/base.html" %}
+
+{% block title %}Teacher Login | Lukore Remedial System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="min-height: 90vh;">
+  <div class="card shadow-lg p-4" style="max-width: 400px; width: 100%; border-radius: 15px;">
+    
+    <!-- Title Section -->
+    <h2 class="text-center mb-3" style="color:#00695c;">Lukore Remedial System</h2>
+    <p class="text-center text-muted mb-4">Teacher Login</p>
+
+    <!-- Login Form -->
+    <form method="post">
+      {% csrf_token %}
+      
+      <div class="mb-3">
+        <label for="id_username" class="form-label">Username</label>
+        <input type="text" name="username" id="id_username" class="form-control" required>
+      </div>
+
+      <div class="mb-3">
+        <label for="id_password" class="form-label">Password</label>
+        <input type="password" name="password" id="id_password" class="form-control" required>
+      </div>
+
+      <button type="submit" class="btn w-100" style="background:#00695c; color:white;">
+        Login
+      </button>
+    </form>
+
+    <!-- Error Message -->
+    {% if form.errors %}
+      <div class="alert alert-danger text-center mt-3 mb-0" role="alert">
+        Invalid username or password
+      </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <p class="text-center text-muted mt-3 mb-0" style="font-size: 14px;">
+      © 2025 Lukore
+    </p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Pending Lessons{% endblock %}
+
+{% block content %}
+<h2>Pending Lessons</h2>
+<table>
+  <tr>
+    <th>Teacher</th>
+    <th>Subject</th>
+    <th>Date</th>
+    <th>Topic</th>
+    <th>Actions</th>
+  </tr>
+  {% for lesson in lessons %}
+  <tr>
+    <td>{{ lesson.teacher.username }}</td>
+    <td>{{ lesson.subject.name }}</td>
+    <td>{{ lesson.date }}</td>
+    <td>{{ lesson.topic }}</td>
+    <td>
+      <a class="btn" href="{% url 'approve_lesson' lesson.id %}">
+        <i class="fa fa-check"></i> Approve
+      </a>
+    </td>
+  </tr>
+  {% empty %}
+  <tr>
+    <td colspan="5">No pending lessons.</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

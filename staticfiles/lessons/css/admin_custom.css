@@ -1,0 +1,56 @@
+/* -----------------------------
+   Admin Header
+----------------------------- */
+#header {
+    padding: 10px 20px;        /* space around the header */
+    background-color: #2c3e50; /* optional: darker header */
+}
+
+#header h1 {
+    white-space: normal;       /* allows long titles to wrap */
+    font-size: 1.6em;          /* adjust for visibility */
+    line-height: 1.2em;        /* tighter spacing */
+    color: #ecf0f1;            /* header text color */
+}
+
+/* -----------------------------
+   Index page titles
+----------------------------- */
+.dashboard-module h2 {
+    font-size: 1.3em;
+    margin-bottom: 10px;
+}
+
+/* -----------------------------
+   Model list / dashboard spacing
+----------------------------- */
+.dashboard-module {
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+/* -----------------------------
+   Filter sidebar
+----------------------------- */
+#changelist-filter {
+    margin-top: 10px;
+}
+
+/* -----------------------------
+   Tables
+----------------------------- */
+table {
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 6px 10px;
+}
+
+/* -----------------------------
+   Footer (optional)
+----------------------------- */
+#footer {
+    padding: 10px 20px;
+    font-size: 0.9em;
+}

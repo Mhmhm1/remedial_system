@@ -1,0 +1,28 @@
+{% extends "lessons/base.html" %}
+{% block title %}Add Lesson{% endblock %}
+
+{% block content %}
+<h2>Add Lesson</h2>
+
+<form method="post">
+    {% csrf_token %}
+    <div>
+        <label for="id_week">Week:</label>
+        {{ form.week }}
+    </div>
+    <div>
+        <label for="id_timetable">Timetable:</label>
+        {{ form.timetable }}
+    </div>
+    <button type="submit">Save Lesson</button>
+</form>
+
+<a href="{% url 'teacher_dashboard' %}">⬅ Back to Dashboard</a>
+{% if form.non_field_errors %}
+    <ul class="errorlist">
+        {% for error in form.non_field_errors %}
+            <li style="color: red;">{{ error }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+{% endblock %}

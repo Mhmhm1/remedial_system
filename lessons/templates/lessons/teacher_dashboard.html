@@ -1,0 +1,142 @@
+{% extends "lessons/base.html" %}
+{% load static %}
+
+{% block title %}Teacher Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- Profile Section -->
+<div class="profile-container">
+    <form action="{% url 'update_profile_picture' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label for="profile_picture" style="cursor:pointer; display:inline-block;">
+            {% if teacher.profile_picture %}
+                <img src="{{ teacher.profile_picture.url }}" alt="Profile Picture">
+            {% else %}
+                <img src="{% static 'lessons/img/default_profile.png' %}" alt="Default Profile Picture">
+            {% endif %}
+            <div style="text-align:center; font-size:0.8em; color:#007BFF;">Click to change</div>
+        </label>
+        <input type="file" name="profile_picture" id="profile_picture" style="display:none;" onchange="this.form.submit();">
+    </form>
+
+    {% if teacher.profile_picture %}
+    <form action="{% url 'update_profile_picture' %}" method="post">
+        {% csrf_token %}
+        <button type="submit" name="delete_picture" value="1" class="logout-btn">Delete</button>
+    </form>
+    {% endif %}
+
+    <h1>Welcome, {{ teacher.user.get_full_name }}</h1>
+</div>
+
+<!-- Logout -->
+<form action="{% url 'logout' %}" method="post" style="margin-bottom:30px;">
+    {% csrf_token %}
+    <button type="submit" class="logout-btn">Logout</button>
+</form>
+
+<!-- Filters -->
+<div class="filters">
+    <form method="get">
+        <label>Week:</label>
+        <select name="week">
+            <option value="">All</option>
+            {% for week in weeks %}
+                <option value="{{ week.id }}" {% if week.id|stringformat:"s" == selected_week %}selected{% endif %}>
+                    Week {{ week.number }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label>Class:</label>
+        <select name="class_group">
+            <option value="">All</option>
+            {% for c in classes %}
+                <option value="{{ c.id }}" {% if c.id|stringformat:"s" == selected_class %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Subject:</label>
+        <select name="subject">
+            <option value="">All</option>
+            {% for s in subjects %}
+                <option value="{{ s.id }}" {% if s.id|stringformat:"s" == selected_subject %}selected{% endif %}>{{ s.name }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit">Filter</button>
+    </form>
+</div>
+
+<!-- Summary Cards -->
+<div class="cards-container">
+    <div class="card"><h3>Total Lessons</h3><p>{{ total_lessons }}</p></div>
+    <div class="card"><h3>Attended</h3><p>{{ attended }}</p></div>
+    <div class="card"><h3>Not Attended</h3><p>{{ not_attended }}</p></div>
+    <div class="card"><h3>Pending</h3><p>{{ pending }}</p></div>
+   
+    <div class="card"><h3>Paid Lessons</h3><p>{{ paid }}</p></div>
+    <div class="card"><h3>Unpaid Lessons</h3><p>{{ unpaid }}</p></div>
+    <div class="card"><h3>Total Paid Amount</h3><p>${{ total_paid_amount|floatformat:2 }}</p></div>
+    <div class="card"><h3>Total Unpaid Amount</h3><p>${{ total_unpaid_amount|floatformat:2 }}</p></div>
+</div>
+
+<!-- Quick Actions -->
+<div class="cards-container">
+    <div class="card">
+        <h3>Add Lesson</h3>
+        <p>Create a new lesson record.</p>
+        <a href="{% url 'add_lesson' %}" class="btn">➕ Add Lesson</a>
+    </div>
+   
+</div>
+
+<!-- Lessons Table -->
+<h2>Lessons Details</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Week</th>
+            <th>Class</th>
+            <th>Subject</th>
+            <th>Status</th>
+            <th>Payment Status</th>
+            <th>Amount</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for lesson in lessons %}
+        <tr>
+            <td>{{ lesson.week.number }}</td>
+            <td>
+                {% for c in lesson.timetable.class_groups.all %}
+                    {{ c.name }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </td>
+            <td>{{ lesson.timetable.subject }}</td>
+            <td>{{ lesson.status }}</td>
+            <td>{{ lesson.payment_status }}</td>
+            <td>${{ lesson.amount|floatformat:2 }}</td>
+            <td>
+                {% if lesson.status == "not_attended" or lesson.status == "pending" %}
+                    <form action="{% url 'mark_attended' lesson.id %}" method="post" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit">✅ Mark Attended</button>
+                    </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7">No lessons found.</td></tr>
+        {% endfor %}
+    </tbody>
+
+
+{% endblock %}
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Save</button>
+</form>
