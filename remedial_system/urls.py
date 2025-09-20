@@ -4,11 +4,9 @@ from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
 from lessons.admin import admin_site
-from django.http import HttpResponse
+from lessons import views as lesson_views 
 
-# Simple home page view
-def home(request):
-    return HttpResponse("Welcome to Remedial System!")
+
 
 urlpatterns = [
     path("", home, name="home"),  # root URL
