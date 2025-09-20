@@ -59,8 +59,11 @@ class Timetable(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
 
-    def __str__(self):
-      return f"{self.subject_fk.name} - {self.day} {self.start_time}"
+   def __str__(self):
+    if self.subject_fk:
+        return f"{self.subject_fk.name} - {self.get_day_display()} {self.start_time.strftime('%H:%M')}"
+    return f"Unnamed - {self.get_day_display()} {self.start_time.strftime('%H:%M')}"
+
 # ----------------------------
 # Week model
 # ----------------------------
