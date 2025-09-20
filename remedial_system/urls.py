@@ -14,6 +14,7 @@ urlpatterns = [
     path("", home, name="home"),  # root URL
     path("admin/", admin_site.urls), 
     path("lessons/", include("lessons.urls")),
+    path('', lesson_views.home, name='home'),
 
     # Authentication URLs
     path("accounts/login/", auth_views.LoginView.as_view(template_name="lessons/login.html"), name="login"),
