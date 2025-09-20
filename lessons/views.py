@@ -65,9 +65,9 @@ def get_timetables(request):
 @login_required
 def teacher_dashboard(request):
     try:
-        teacher = Teacher.objects.get(user=request.user)
-    except Teacher.DoesNotExist:
-        return redirect('some_error_page')  # Or use a template showing a friendly message
+    teacher = Teacher.objects.get(user=request.user)
+except Teacher.DoesNotExist:
+    return redirect('home')  # <-- you already have a home view
 
 
     # Filters from GET parameters
