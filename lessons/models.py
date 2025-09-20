@@ -52,17 +52,16 @@ class Timetable(models.Model):
     ]
 
     subject_fk = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, blank=True)
-
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     class_groups = models.ManyToManyField(ClassGroup)
     day = models.CharField(max_length=3, choices=DAYS)
     start_time = models.TimeField()
     end_time = models.TimeField()
 
-   def __str__(self):
-    if self.subject_fk:
-        return f"{self.subject_fk.name} - {self.get_day_display()} {self.start_time.strftime('%H:%M')}"
-    return f"Unnamed - {self.get_day_display()} {self.start_time.strftime('%H:%M')}"
+    def __str__(self):
+        if self.subject_fk:
+            return f"{self.subject_fk.name} - {self.get_day_display()} {self.start_time.strftime('%H:%M')}"
+        return f"Unnamed - {self.get_day_display()} {self.start_time.strftime('%H:%M')}"
 
 # ----------------------------
 # Week model
