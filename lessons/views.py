@@ -215,7 +215,12 @@ def load_timetables(request):
     if teacher_id:
         timetables = Timetable.objects.filter(teacher_id=teacher_id)
 
-    print("DEBUG teacher:", teacher_id, "timetables:", list(timetables))
-
-    data = [{"id": t.id, "name": str(t)} for t in timetables]
+    data = [
+        {
+            "id": t.id,
+            "text": f"{t.subject.name} - {t.day} {t.start_time.strftime('%H:%M')} "
+                    f"({', '.join([c.name for c in t.class_groups.all()])})"
+        }
+        for t in timetables
+    ]
     return JsonResponse(data, safe=False)
