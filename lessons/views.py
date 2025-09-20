@@ -215,13 +215,15 @@ def load_timetables(request):
     if teacher_id:
         timetables = Timetable.objects.filter(teacher_id=teacher_id)
 
-  data = [
-    {
-        "id": t.id,
-        "text": f"{t.subject_fk.name if t.subject_fk else 'Unnamed'} - {t.get_day_display()} {t.start_time.strftime('%H:%M')}"
-    }
-    for t in timetables
-]
+    data = [
+        {
+            "id": t.id,
+            "text": f"{t.subject_fk.name if t.subject_fk else 'Unnamed'} - "
+                    f"{t.get_day_display()} {t.start_time.strftime('%H:%M')}"
+        }
+        for t in timetables
+    ]
 
     return JsonResponse(data, safe=False)
+
 
