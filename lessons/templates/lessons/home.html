@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Remedial System</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            padding: 100px 20px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 400px;
+            transition: 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.2);
+        }
+        a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>✨ Welcome to Remedial System ✨</h1>
+    <p>Choose your portal to continue</p>
+
+    <div class="d-flex justify-content-center flex-wrap">
+        <div class="card">
+            <h2>👨‍🏫 Teacher Dashboard</h2>
+            <p>Access your classes, lessons, and payments.</p>
+            <a href="/teachers/dashboard/" class="btn btn-light mt-3">Go to Teacher</a>
+        </div>
+
+        <div class="card">
+            <h2>🛠️ Admin Portal</h2>
+            <p>Manage teachers, lessons, and system settings.</p>
+            <a href="/admin/" class="btn btn-warning mt-3">Go to Admin</a>
+        </div>
+    </div>
+</body>
+</html>
