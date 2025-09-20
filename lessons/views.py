@@ -208,6 +208,7 @@ def ajax_teacher_subjects(request):
  # ---------- AJAX: load timetables (simple dropdown for admin/teacher) ----------
 @login_required
 
+@login_required
 def load_timetables(request):
     teacher_id = request.GET.get("teacher")
     timetables = []
@@ -215,12 +216,14 @@ def load_timetables(request):
     if teacher_id:
         timetables = Timetable.objects.filter(teacher_id=teacher_id)
 
-  data = [
-    {
-        "id": t.id,
-        "name": f"{t.subject_fk.name} - {t.day} {t.start_time.strftime('%H:%M')} ({', '.join(c.name for c in t.class_groups.all())})"
-    }
-    for t in timetables
-]
+    data = [
+        {
+            "id": t.id,
+            "name": f"{t.subject_fk.name} - {t.get_day_display()} {t.start_time.strftime('%H:%M')} "
+                    f"({', '.join(c.name for c in t.class_groups.all())})"
+        }
+        for t in timetables if t.subject_fk  # prevent crash if subject_fk is null
+    ]
+
     return JsonResponse(data, safe=False)
 
