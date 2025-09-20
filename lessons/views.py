@@ -210,20 +210,19 @@ def ajax_teacher_subjects(request):
 @login_required
 def load_timetables(request):
     teacher_id = request.GET.get("teacher")
-    timetables = []
-
-    if teacher_id:
-        timetables = Timetable.objects.filter(teacher_id=teacher_id)
+    timetables = Timetable.objects.filter(teacher_id=teacher_id) if teacher_id else []
 
     data = [
         {
             "id": t.id,
-            "text": f"{t.subject_fk.name if t.subject_fk else 'Unnamed'} - "
-                    f"{t.get_day_display()} {t.start_time.strftime('%H:%M')}"
+            "subject": t.subject_fk.name if t.subject_fk else "Unnamed",
+            "day": t.get_day_display(),
+            "start_time": t.start_time.strftime("%H:%M"),
+            "end_time": t.end_time.strftime("%H:%M"),
         }
         for t in timetables
     ]
-
     return JsonResponse(data, safe=False)
+
 
 
