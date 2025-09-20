@@ -9,7 +9,6 @@ from lessons import views as lesson_views
 
 
 urlpatterns = [
-    path("", home, name="home"),  # root URL
     path("admin/", admin_site.urls), 
     path("lessons/", include("lessons.urls")),
     path('', lesson_views.home, name='home'),
