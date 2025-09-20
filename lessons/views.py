@@ -62,13 +62,15 @@ def get_timetables(request):
     return JsonResponse({"timetables": data})
 
 # ---------- Teacher dashboard ----------
-@login_required
+@@login_required
 def teacher_dashboard(request):
     try:
         teacher = Teacher.objects.get(user=request.user)
-   except Teacher.DoesNotExist:
-       return redirect('home')  # <-- you already have a home view
+    except Teacher.DoesNotExist:
+        return redirect('home')
 
+    context = {"teacher": teacher}
+    
 
     # Filters from GET parameters
     selected_week = request.GET.get("week")
