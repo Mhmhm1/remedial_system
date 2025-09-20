@@ -215,9 +215,12 @@ def load_timetables(request):
     if teacher_id:
         timetables = Timetable.objects.filter(teacher_id=teacher_id)
 
-    data = [
-        {"id": t.id, "name": str(t)}  # 👈 matches JS
-        for t in timetables
-    ]
+  data = [
+    {
+        "id": t.id,
+        "name": f"{t.subject_fk.name} - {t.day} {t.start_time.strftime('%H:%M')} ({', '.join(c.name for c in t.class_groups.all())})"
+    }
+    for t in timetables
+]
     return JsonResponse(data, safe=False)
 
