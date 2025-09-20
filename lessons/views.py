@@ -62,7 +62,7 @@ def get_timetables(request):
     return JsonResponse({"timetables": data})
 
 # ---------- Teacher dashboard ----------
-@@login_required
+@login_required
 def teacher_dashboard(request):
     try:
         teacher = Teacher.objects.get(user=request.user)
