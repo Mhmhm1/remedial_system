@@ -10,6 +10,9 @@ from django.http import JsonResponse
 from .models import Timetable
 from django.http import JsonResponse
 
+def home(request):
+    return render(request, "home.html")
+
 def debug_load_timetables(request):
     return JsonResponse({
         "timetables": [
