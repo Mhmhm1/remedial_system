@@ -11,7 +11,8 @@ from .models import Timetable
 from django.http import JsonResponse
 
 def home(request):
-    return render(request, "home.html")
+    return render(request, "lessons/home.html")
+
 
 def debug_load_timetables(request):
     return JsonResponse({
