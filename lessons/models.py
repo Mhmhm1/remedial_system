@@ -148,3 +148,34 @@ class LessonRecord(models.Model):
         if self.amount is None:  # only replace if it's not set
             self.amount = 400
         super().save(*args, **kwargs)
+        
+class Student(models.Model):
+    first_name = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50)
+    admission_number = models.CharField(max_length=20, unique=True)
+    class_group = models.ForeignKey(ClassGroup, on_delete=models.CASCADE, related_name='students')
+    
+    # Payment info
+    term_fee = models.DecimalField(max_digits=8, decimal_places=2, default=1500)  # Default per term
+    amount_paid = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    
+    # Optional: to track debt
+    @property
+    def balance(self):
+        return self.term_fee - self.amount_paid
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} ({self.admission_number})"
+
+class StudentPayment(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='payments')
+    amount = models.DecimalField(max_digits=8, decimal_places=2)
+    date_paid = models.DateField(auto_now_add=True)  # Defaults to today
+    term = models.CharField(max_length=20)  # Optional: "Term 1", "Term 2", etc.
+    recorded_by = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True)  # Who collected the payment
+
+    def __str__(self):
+        return f"{self.student} - Paid {self.amount} on {self.date_paid}"
+    
+    class Meta:
+        ordering = ['-date_paid']  # Latest payments first
