@@ -11,7 +11,9 @@
         <select name="class_group" id="class_group" onchange="this.form.submit()">
             <option value="">--Choose--</option>
             {% for cls in class_groups %}
-                <option value="{{ cls.id }}" {% if selected_class_id == cls.id|stringformat:"s" %}selected{% endif %}>{{ cls.name }}</option>
+                <option value="{{ cls.id }}" {% if selected_class_id == cls.id|stringformat:"s" %}selected{% endif %}>
+                    {{ cls.name }}
+                </option>
             {% endfor %}
         </select>
     </form>
@@ -19,6 +21,9 @@
     {% if students %}
     <form method="post">
         {% csrf_token %}
+        <!-- Keep the selected class in POST -->
+        <input type="hidden" name="class_group" value="{{ selected_class_id }}">
+
         <table class="table table-bordered">
             <thead>
                 <tr>
