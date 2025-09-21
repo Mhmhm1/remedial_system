@@ -9,6 +9,7 @@ urlpatterns = [
     path("teacher/dashboard/", views.teacher_dashboard, name="teacher_dashboard"),
     path("teacher/update-profile-picture/", views.update_profile_picture, name="update_profile_picture"),
     path("mark_attended/<int:lesson_id>/", views.mark_attended, name="mark_attended"),
+    path("student/payments/", views.student_payments, name="student_payments"),
 
     # AJAX endpoints
     path("ajax/load-timetables/", views.load_timetables, name="ajax_load_timetables"),
