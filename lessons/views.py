@@ -245,7 +245,7 @@ def student_payments(request):
     class_groups = teacher.class_groups.all()
 
     # Get selected class from GET params
-    selected_class_id = request.GET.get("class_group", "")
+    selected_class_id = request.GET.get("class_group") or request.POST.get("class_group")
     students = []
 
     if selected_class_id:
