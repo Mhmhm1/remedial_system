@@ -133,6 +133,13 @@
         {% endfor %}
     </tbody>
 
+{% if teacher.is_class_teacher %}
+<div class="card">
+    <h2>💰 Student Payments</h2>
+    <p>Record student payments for your class.</p>
+    <a href="{% url 'student_payments' %}" class="btn btn-success mt-3">Go to Payments</a>
+</div>
+{% endif %}
 
 {% endblock %}
 <form method="post">
