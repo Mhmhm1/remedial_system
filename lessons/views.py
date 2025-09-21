@@ -234,50 +234,48 @@ def load_timetables(request):
 
 @login_required
 def student_payments(request):
+    # Get the logged-in teacher
     teacher = get_object_or_404(Teacher, user=request.user)
-
-    # Only class teachers can access student payments
-    if not getattr(teacher, 'is_class_teacher', False):
+    
+    # Only class teachers can see this section
+    if not teacher.is_class_teacher:
         return redirect('teacher_dashboard')
 
+    # Get all classes this teacher is responsible for
     class_groups = teacher.class_groups.all()
 
-    selected_class_id = request.GET.get("class_group")
+    # Get selected class from GET params
+    selected_class_id = request.GET.get("class_group", "")
     students = []
+
     if selected_class_id:
+        # Fetch students in the selected class
         students = Student.objects.filter(class_group_id=selected_class_id)
 
-    # Prepare student payment info
-    student_info = []
-    for student in students:
-        total_paid = StudentPayment.objects.filter(student=student).aggregate(
-            total=models.Sum('amount')
-        )['total'] or 0
-        remaining = max(TERM_FEE - total_paid, 0)
-        student_info.append({
-            'student': student,
-            'total_paid': total_paid,
-            'remaining': remaining
-        })
-
     if request.method == "POST":
-        for info in student_info:
-            student = info['student']
+        for student in students:
             amount_str = request.POST.get(f"amount_{student.id}")
             if amount_str:
                 try:
                     amount = float(amount_str)
-                    if 0 < amount <= info['remaining']:
-                        # Save partial payment
-                        StudentPayment.objects.create(student=student, amount=amount)
+                    if amount > 0:
+                        StudentPayment.objects.create(
+                            student=student,
+                            amount=amount,
+                            recorded_by=teacher,
+                            term="Term 1"  # Optional: you can make this dynamic
+                        )
+                        # Update student's amount_paid
+                        student.amount_paid += amount
+                        student.save()
                 except ValueError:
-                    continue  # Ignore invalid entries
+                    continue  # Ignore invalid inputs
+        # Redirect back to the same page with the same class selected
         return redirect(f"{request.path}?class_group={selected_class_id}")
 
     context = {
         "class_groups": class_groups,
-        "student_info": student_info,
-        "selected_class_id": int(selected_class_id) if selected_class_id else None,
+        "students": students,
+        "selected_class_id": selected_class_id,
     }
     return render(request, "lessons/student_payments.html", context)
-
