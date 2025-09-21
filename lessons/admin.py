@@ -35,14 +35,14 @@ class ClassGroupAdmin(admin.ModelAdmin):
 # ----------------------------
 @admin.register(Teacher)
 class TeacherAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'get_subjects')
+    list_display = ('id', 'user', 'get_subjects', 'is_class_teacher')  # show is_class_teacher
+    list_editable = ('is_class_teacher',)  # allow inline editing in list view
     filter_horizontal = ('subjects', 'class_groups')
     search_fields = ('user__first_name', 'user__last_name', 'subjects__name', 'class_groups__name')
 
     def get_subjects(self, obj):
         return ", ".join([s.name for s in obj.subjects.all()])
     get_subjects.short_description = 'Subjects'
-
 
 # ----------------------------
 # Timetable Admin
