@@ -9,6 +9,8 @@ from .models import Teacher, Timetable, LessonRecord, Week, ClassGroup, Subject
 from django.http import JsonResponse
 from .models import Timetable
 from django.http import JsonResponse
+from .models import Teacher, Student, StudentPayment, ClassGroup
+TERM_FEE = 1500
 
 def home(request):
     return render(request, "lessons/home.html")
@@ -229,10 +231,15 @@ def load_timetables(request):
         for t in timetables
     ]
     return JsonResponse(data, safe=False)
-login_required
+
+@login_required
 def student_payments(request):
-    # Only class teachers see their classes
     teacher = get_object_or_404(Teacher, user=request.user)
+
+    # Only class teachers can access student payments
+    if not getattr(teacher, 'is_class_teacher', False):
+        return redirect('teacher_dashboard')
+
     class_groups = teacher.class_groups.all()
 
     selected_class_id = request.GET.get("class_group")
@@ -240,24 +247,37 @@ def student_payments(request):
     if selected_class_id:
         students = Student.objects.filter(class_group_id=selected_class_id)
 
+    # Prepare student payment info
+    student_info = []
+    for student in students:
+        total_paid = StudentPayment.objects.filter(student=student).aggregate(
+            total=models.Sum('amount')
+        )['total'] or 0
+        remaining = max(TERM_FEE - total_paid, 0)
+        student_info.append({
+            'student': student,
+            'total_paid': total_paid,
+            'remaining': remaining
+        })
+
     if request.method == "POST":
-        for student in students:
+        for info in student_info:
+            student = info['student']
             amount_str = request.POST.get(f"amount_{student.id}")
             if amount_str:
-                amount = float(amount_str)
-                if amount > 0:
-                    # Save payment
-                    StudentPayment.objects.create(
-                        student=student,
-                        amount=amount
-                    )
-        return redirect('student_payments')
+                try:
+                    amount = float(amount_str)
+                    if 0 < amount <= info['remaining']:
+                        # Save partial payment
+                        StudentPayment.objects.create(student=student, amount=amount)
+                except ValueError:
+                    continue  # Ignore invalid entries
+        return redirect(f"{request.path}?class_group={selected_class_id}")
 
     context = {
         "class_groups": class_groups,
-        "students": students,
-        "selected_class_id": selected_class_id,
+        "student_info": student_info,
+        "selected_class_id": int(selected_class_id) if selected_class_id else None,
     }
     return render(request, "lessons/student_payments.html", context)
-
 
