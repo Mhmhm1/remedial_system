@@ -229,6 +229,35 @@ def load_timetables(request):
         for t in timetables
     ]
     return JsonResponse(data, safe=False)
+login_required
+def student_payments(request):
+    # Only class teachers see their classes
+    teacher = get_object_or_404(Teacher, user=request.user)
+    class_groups = teacher.class_groups.all()
 
+    selected_class_id = request.GET.get("class_group")
+    students = []
+    if selected_class_id:
+        students = Student.objects.filter(class_group_id=selected_class_id)
+
+    if request.method == "POST":
+        for student in students:
+            amount_str = request.POST.get(f"amount_{student.id}")
+            if amount_str:
+                amount = float(amount_str)
+                if amount > 0:
+                    # Save payment
+                    StudentPayment.objects.create(
+                        student=student,
+                        amount=amount
+                    )
+        return redirect('student_payments')
+
+    context = {
+        "class_groups": class_groups,
+        "students": students,
+        "selected_class_id": selected_class_id,
+    }
+    return render(request, "lessons/student_payments.html", context)
 
 
