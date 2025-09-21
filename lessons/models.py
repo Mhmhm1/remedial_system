@@ -34,10 +34,12 @@ class Teacher(models.Model):
     subjects = models.ManyToManyField(Subject, blank=True)
     class_groups = models.ManyToManyField(ClassGroup, blank=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    
+    # New field to indicate if a teacher is a class teacher
+    is_class_teacher = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.get_full_name() or self.user.username
-
 
 # ----------------------------
 # Timetable model
