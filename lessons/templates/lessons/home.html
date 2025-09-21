@@ -6,13 +6,13 @@
     <title>Remedial System</title>
 
     <!-- Favicon & Icons -->
-    <link rel="icon" href="{% static 'icons/favicon.ico' %}" type="image/x-icon">
-    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'icons/apple-touch-icon.png' %}">
-    <link rel="icon" type="image/png" sizes="192x192" href="{% static 'icons/web-app-manifest-192x192.png' %}">
-    <link rel="icon" type="image/png" sizes="512x512" href="{% static 'icons/android-chrome-512x512.png' %}">
+    <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'apple-touch-icon.png' %}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{% static 'web-app-manifest-192x192.png' %}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{% static 'web-app-manifest-512x512.png' %}">
 
     <!-- PWA manifest -->
-    <link rel="manifest" href="{% static 'lessons/manifest.json' %}">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
 
     <!-- Theme color -->
     <meta name="theme-color" content="#2575fc">
@@ -73,7 +73,7 @@
     <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
-            navigator.serviceWorker.register("{% static 'lessons/service-worker.js' %}")
+            navigator.serviceWorker.register("{% static 'service-worker.js' %}")
             .then(function(registration) {
                 console.log('ServiceWorker registered:', registration.scope);
             }).catch(function(err) {
