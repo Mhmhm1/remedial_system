@@ -15,6 +15,10 @@ urlpatterns = [
     path("ajax/load-timetables/", views.load_timetables, name="ajax_load_timetables"),
     path("ajax/teacher_subjects/", views.ajax_teacher_subjects, name="ajax_teacher_subjects"),
     path("filter_timetables/", views.get_timetables, name="filter_timetables"),
+     path('student-payments/', views.student_payments, name='student_payments'),
+    path('add-student-ajax/', views.add_student_ajax, name='add_student_ajax'),
+    path('edit-student-ajax/<int:student_id>/', views.edit_student_ajax, name='edit_student_ajax'),
+    path('delete-student-ajax/<int:student_id>/', views.delete_student_ajax, name='delete_student_ajax'),
 ]
 
 if settings.DEBUG:
