@@ -3,43 +3,47 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Record Student Payments</h2>
+    <h2>Student Management & Payments</h2>
 
-    <!-- Class selection filter -->
+    <!-- Class selection -->
     <form method="get" class="mb-3">
-        <label for="class_group">Select Class:</label>
-        <select name="class_group" id="class_group" onchange="this.form.submit()">
+        <label>Select Class:</label>
+        <select name="class_group" onchange="this.form.submit()">
             <option value="">--Choose--</option>
             {% for cls in class_groups %}
-                <option value="{{ cls.id }}" {% if selected_class_id == cls.id|stringformat:"s" %}selected{% endif %}>
-                    {{ cls.name }}
-                </option>
+                <option value="{{ cls.id }}" {% if selected_class_id == cls.id|stringformat:"s" %}selected{% endif %}>{{ cls.name }}</option>
             {% endfor %}
         </select>
     </form>
 
-    {% if students %}
+    {% if selected_class_id %}
+    <!-- Add Student Button -->
+    <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addStudentModal">➕ Add Student</button>
+
+    <!-- Students Table -->
     <form method="post">
         {% csrf_token %}
-        <!-- Keep the selected class in POST -->
-        <input type="hidden" name="class_group" value="{{ selected_class_id }}">
-
-        <table class="table table-bordered">
+        <table class="table table-bordered" id="studentsTable">
             <thead>
                 <tr>
                     <th>Student</th>
                     <th>Amount Paid (Ksh)</th>
                     <th>Balance (Ksh)</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for student in students %}
-                <tr>
-                    <td>{{ student.first_name }} {{ student.last_name }}</td>
+                <tr id="studentRow{{ student.id }}">
+                    <td class="student-name">{{ student.first_name }} {{ student.last_name }}</td>
                     <td>
                         <input type="number" name="amount_{{ student.id }}" min="0" step="0.01" class="form-control">
                     </td>
-                    <td>{{ student.balance|floatformat:2 }}</td>
+                    <td class="student-balance">{{ student.balance|floatformat:2 }}</td>
+                    <td>
+                        <button type="button" class="btn btn-warning btn-sm edit-btn" data-id="{{ student.id }}" data-first="{{ student.first_name }}" data-last="{{ student.last_name }}" data-adm="{{ student.admission_number }}">Edit</button>
+                        <button type="button" class="btn btn-danger btn-sm delete-btn" data-id="{{ student.id }}">Delete</button>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -50,4 +54,151 @@
         <p>Please select a class to see students.</p>
     {% endif %}
 </div>
+
+<!-- Add Student Modal -->
+<div class="modal fade" id="addStudentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="addStudentForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Add Student</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label>First Name</label>
+            <input type="text" name="first_name" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Last Name</label>
+            <input type="text" name="last_name" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Admission Number</label>
+            <input type="text" name="admission_number" class="form-control" required>
+          </div>
+          <input type="hidden" name="class_group" value="{{ selected_class_id }}">
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Add Student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Student Modal -->
+<div class="modal fade" id="editStudentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="editStudentForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Student</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          {% csrf_token %}
+          <input type="hidden" name="student_id" id="edit_student_id">
+          <div class="mb-3">
+            <label>First Name</label>
+            <input type="text" name="first_name" id="edit_first_name" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Last Name</label>
+            <input type="text" name="last_name" id="edit_last_name" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Admission Number</label>
+            <input type="text" name="admission_number" id="edit_admission_number" class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-warning">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+    // ADD STUDENT
+    document.getElementById("addStudentForm").addEventListener("submit", function(e){
+        e.preventDefault();
+        const form = e.target;
+        const data = new FormData(form);
+        fetch("{% url 'add_student_ajax' %}", {
+            method: "POST",
+            body: data
+        })
+        .then(res => res.json())
+        .then(student => {
+            const tbody = document.querySelector("#studentsTable tbody");
+            const tr = document.createElement("tr");
+            tr.id = "studentRow" + student.id;
+            tr.innerHTML = `
+                <td class="student-name">${student.name}</td>
+                <td><input type="number" name="amount_${student.id}" min="0" step="0.01" class="form-control"></td>
+                <td class="student-balance">${student.balance}</td>
+                <td>
+                    <button type="button" class="btn btn-warning btn-sm edit-btn" data-id="${student.id}" data-first="${form.first_name.value}" data-last="${form.last_name.value}" data-adm="${form.admission_number.value}">Edit</button>
+                    <button type="button" class="btn btn-danger btn-sm delete-btn" data-id="${student.id}">Delete</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            var modal = bootstrap.Modal.getInstance(document.getElementById('addStudentModal'));
+            modal.hide();
+            form.reset();
+        });
+    });
+
+    // EDIT STUDENT
+    document.addEventListener("click", function(e){
+        if(e.target.classList.contains("edit-btn")){
+            const btn = e.target;
+            document.getElementById("edit_student_id").value = btn.dataset.id;
+            document.getElementById("edit_first_name").value = btn.dataset.first;
+            document.getElementById("edit_last_name").value = btn.dataset.last;
+            document.getElementById("edit_admission_number").value = btn.dataset.adm;
+            new bootstrap.Modal(document.getElementById("editStudentModal")).show();
+        }
+    });
+
+    document.getElementById("editStudentForm").addEventListener("submit", function(e){
+        e.preventDefault();
+        const form = e.target;
+        const id = document.getElementById("edit_student_id").value;
+        const data = new FormData(form);
+        fetch(`/edit-student-ajax/${id}/`, {method: "POST", body: data})
+            .then(res => res.json())
+            .then(student => {
+                const row = document.getElementById("studentRow"+student.id);
+                row.querySelector(".student-name").textContent = student.name;
+                var modal = bootstrap.Modal.getInstance(document.getElementById('editStudentModal'));
+                modal.hide();
+            });
+    });
+
+    // DELETE STUDENT
+    document.addEventListener("click", function(e){
+        if(e.target.classList.contains("delete-btn")){
+            if(confirm("Are you sure to delete this student?")){
+                const id = e.target.dataset.id;
+                fetch(`/delete-student-ajax/${id}/`, {
+                    method: "POST",
+                    headers: {'X-CSRFToken': '{{ csrf_token }}'}
+                }).then(res => res.json())
+                  .then(data => {
+                      if(data.success){
+                          document.getElementById("studentRow"+data.id).remove();
+                      }
+                  });
+            }
+        }
+    });
+
+});
+</script>
 {% endblock %}
