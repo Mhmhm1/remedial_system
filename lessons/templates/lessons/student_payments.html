@@ -1,204 +1,199 @@
-{% extends "lessons/base.html" %}
-{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Dashboard</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
+  h1 { color: #333; }
+  button {
+    padding: 8px 12px;
+    margin-right: 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  #addStudentBtn { background: #28a745; color: #fff; }
+  #addStudentBtn:hover { background: #218838; }
+  .action-btn { background: #007bff; color: #fff; }
+  .action-btn:hover { background: #0056b3; }
+  .delete-btn { background: #dc3545; color: #fff; }
+  .delete-btn:hover { background: #b02a37; }
 
-{% block content %}
-<div class="container mt-4">
-    <h2>Student Management & Payments</h2>
+  input.search-box {
+    padding: 8px;
+    width: 300px;
+    margin-top: 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+  }
 
-    <!-- Class selection -->
-    <form method="get" class="mb-3">
-        <label>Select Class:</label>
-        <select name="class_group" onchange="this.form.submit()">
-            <option value="">--Choose--</option>
-            {% for cls in class_groups %}
-                <option value="{{ cls.id }}" {% if selected_class_id == cls.id|stringformat:"s" %}selected{% endif %}>{{ cls.name }}</option>
-            {% endfor %}
-        </select>
-    </form>
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; }
+  th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+  th { background-color: #f4f4f4; cursor: pointer; }
+  tbody tr:hover { background-color: #f1f1f1; }
 
-    {% if selected_class_id %}
-    <!-- Add Student Button -->
-    <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addStudentModal">➕ Add Student</button>
+  .modal {
+    display: none;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    justify-content: center; align-items: center;
+    animation: fadeIn 0.3s;
+  }
+  .modal-content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    width: 320px;
+    transform: translateY(-50px);
+    opacity: 0;
+    animation: slideDown 0.3s forwards;
+  }
+  .modal input { width: 100%; padding: 8px; margin: 5px 0; border-radius: 4px; border: 1px solid #ccc; }
 
-    <!-- Students Table -->
-    <form method="post">
-        {% csrf_token %}
-        <table class="table table-bordered" id="studentsTable">
-            <thead>
-                <tr>
-                    <th>Student</th>
-                    <th>Amount Paid (Ksh)</th>
-                    <th>Balance (Ksh)</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for student in students %}
-                <tr id="studentRow{{ student.id }}">
-                    <td class="student-name">{{ student.first_name }} {{ student.last_name }}</td>
-                    <td>
-                        <input type="number" name="amount_{{ student.id }}" min="0" step="0.01" class="form-control">
-                    </td>
-                    <td class="student-balance">{{ student.balance|floatformat:2 }}</td>
-                    <td>
-                        <button type="button" class="btn btn-warning btn-sm edit-btn" data-id="{{ student.id }}" data-first="{{ student.first_name }}" data-last="{{ student.last_name }}" data-adm="{{ student.admission_number }}">Edit</button>
-                        <button type="button" class="btn btn-danger btn-sm delete-btn" data-id="{{ student.id }}">Delete</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <button type="submit" class="btn btn-primary">Save Payments</button>
-    </form>
-    {% else %}
-        <p>Please select a class to see students.</p>
-    {% endif %}
-</div>
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideDown { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+</style>
+</head>
+<body>
 
-<!-- Add Student Modal -->
-<div class="modal fade" id="addStudentModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form id="addStudentForm">
-        <div class="modal-header">
-          <h5 class="modal-title">Add Student</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          {% csrf_token %}
-          <div class="mb-3">
-            <label>First Name</label>
-            <input type="text" name="first_name" class="form-control" required>
-          </div>
-          <div class="mb-3">
-            <label>Last Name</label>
-            <input type="text" name="last_name" class="form-control" required>
-          </div>
-          <div class="mb-3">
-            <label>Admission Number</label>
-            <input type="text" name="admission_number" class="form-control" required>
-          </div>
-          <input type="hidden" name="class_group" value="{{ selected_class_id }}">
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-success">Add Student</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
+<h1>Student Dashboard</h1>
+<button id="addStudentBtn">Add Student</button>
+<input type="text" id="searchInput" class="search-box" placeholder="Search students...">
 
-<!-- Edit Student Modal -->
-<div class="modal fade" id="editStudentModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form id="editStudentForm">
-        <div class="modal-header">
-          <h5 class="modal-title">Edit Student</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          {% csrf_token %}
-          <input type="hidden" name="student_id" id="edit_student_id">
-          <div class="mb-3">
-            <label>First Name</label>
-            <input type="text" name="first_name" id="edit_first_name" class="form-control" required>
-          </div>
-          <div class="mb-3">
-            <label>Last Name</label>
-            <input type="text" name="last_name" id="edit_last_name" class="form-control" required>
-          </div>
-          <div class="mb-3">
-            <label>Admission Number</label>
-            <input type="text" name="admission_number" id="edit_admission_number" class="form-control" required>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-warning">Save Changes</button>
-        </div>
-      </form>
+<table id="studentTable">
+  <thead>
+    <tr>
+      <th onclick="sortTable(0)">First Name ▲▼</th>
+      <th onclick="sortTable(1)">Last Name</th>
+      <th onclick="sortTable(2)">Admission No.</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<!-- Modal for Add/Edit -->
+<div id="studentModal" class="modal">
+  <div class="modal-content">
+    <h3 id="modalTitle">Add Student</h3>
+    <input type="text" id="firstName" placeholder="First Name">
+    <input type="text" id="lastName" placeholder="Last Name">
+    <input type="text" id="admissionNo" placeholder="Admission Number">
+    <div style="margin-top: 10px;">
+      <button id="saveBtn" style="background:#28a745; color:#fff;">Save</button>
+      <button id="cancelBtn" style="background:#6c757d; color:#fff;">Cancel</button>
     </div>
   </div>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function(){
+let students = [];
+let editIndex = null;
 
-    // ADD STUDENT
-    document.getElementById("addStudentForm").addEventListener("submit", function(e){
-        e.preventDefault();
-        const form = e.target;
-        const data = new FormData(form);
-        fetch("{% url 'add_student_ajax' %}", {
-            method: "POST",
-            body: data
-        })
-        .then(res => res.json())
-        .then(student => {
-            const tbody = document.querySelector("#studentsTable tbody");
-            const tr = document.createElement("tr");
-            tr.id = "studentRow" + student.id;
-            tr.innerHTML = `
-                <td class="student-name">${student.name}</td>
-                <td><input type="number" name="amount_${student.id}" min="0" step="0.01" class="form-control"></td>
-                <td class="student-balance">${student.balance}</td>
-                <td>
-                    <button type="button" class="btn btn-warning btn-sm edit-btn" data-id="${student.id}" data-first="${form.first_name.value}" data-last="${form.last_name.value}" data-adm="${form.admission_number.value}">Edit</button>
-                    <button type="button" class="btn btn-danger btn-sm delete-btn" data-id="${student.id}">Delete</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-            var modal = bootstrap.Modal.getInstance(document.getElementById('addStudentModal'));
-            modal.hide();
-            form.reset();
-        });
-    });
+const modal = document.getElementById('studentModal');
+const addBtn = document.getElementById('addStudentBtn');
+const saveBtn = document.getElementById('saveBtn');
+const cancelBtn = document.getElementById('cancelBtn');
+const modalTitle = document.getElementById('modalTitle');
 
-    // EDIT STUDENT
-    document.addEventListener("click", function(e){
-        if(e.target.classList.contains("edit-btn")){
-            const btn = e.target;
-            document.getElementById("edit_student_id").value = btn.dataset.id;
-            document.getElementById("edit_first_name").value = btn.dataset.first;
-            document.getElementById("edit_last_name").value = btn.dataset.last;
-            document.getElementById("edit_admission_number").value = btn.dataset.adm;
-            new bootstrap.Modal(document.getElementById("editStudentModal")).show();
-        }
-    });
+const firstNameInput = document.getElementById('firstName');
+const lastNameInput = document.getElementById('lastName');
+const admissionNoInput = document.getElementById('admissionNo');
+const searchInput = document.getElementById('searchInput');
 
-    document.getElementById("editStudentForm").addEventListener("submit", function(e){
-        e.preventDefault();
-        const form = e.target;
-        const id = document.getElementById("edit_student_id").value;
-        const data = new FormData(form);
-        fetch(`/edit-student-ajax/${id}/`, {method: "POST", body: data})
-            .then(res => res.json())
-            .then(student => {
-                const row = document.getElementById("studentRow"+student.id);
-                row.querySelector(".student-name").textContent = student.name;
-                var modal = bootstrap.Modal.getInstance(document.getElementById('editStudentModal'));
-                modal.hide();
-            });
-    });
+const studentTableBody = document.querySelector('#studentTable tbody');
 
-    // DELETE STUDENT
-    document.addEventListener("click", function(e){
-        if(e.target.classList.contains("delete-btn")){
-            if(confirm("Are you sure to delete this student?")){
-                const id = e.target.dataset.id;
-                fetch(`/delete-student-ajax/${id}/`, {
-                    method: "POST",
-                    headers: {'X-CSRFToken': '{{ csrf_token }}'}
-                }).then(res => res.json())
-                  .then(data => {
-                      if(data.success){
-                          document.getElementById("studentRow"+data.id).remove();
-                      }
-                  });
-            }
-        }
-    });
+function openModal(edit = false, index = null) {
+  modal.style.display = 'flex';
+  if(edit) {
+    modalTitle.textContent = 'Edit Student';
+    firstNameInput.value = students[index].firstName;
+    lastNameInput.value = students[index].lastName;
+    admissionNoInput.value = students[index].admissionNo;
+    editIndex = index;
+  } else {
+    modalTitle.textContent = 'Add Student';
+    firstNameInput.value = '';
+    lastNameInput.value = '';
+    admissionNoInput.value = '';
+    editIndex = null;
+  }
+}
 
+function closeModal() { modal.style.display = 'none'; }
+
+function renderTable() {
+  const filter = searchInput.value.toLowerCase();
+  studentTableBody.innerHTML = '';
+  students.forEach((s, index) => {
+    if (
+      s.firstName.toLowerCase().includes(filter) ||
+      s.lastName.toLowerCase().includes(filter) ||
+      s.admissionNo.toLowerCase().includes(filter)
+    ) {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${s.firstName}</td>
+        <td>${s.lastName}</td>
+        <td>${s.admissionNo}</td>
+        <td>
+          <button class="action-btn" onclick="editStudent(${index})">Edit</button>
+          <button class="delete-btn" onclick="deleteStudent(${index})">Delete</button>
+        </td>
+      `;
+      studentTableBody.appendChild(row);
+    }
+  });
+}
+
+function editStudent(index) { openModal(true, index); }
+
+function deleteStudent(index) {
+  if(confirm('Are you sure you want to delete this student?')) {
+    students.splice(index, 1);
+    renderTable();
+  }
+}
+
+function sortTable(colIndex) {
+  students.sort((a,b) => {
+    const valA = Object.values(a)[colIndex].toLowerCase();
+    const valB = Object.values(b)[colIndex].toLowerCase();
+    return valA.localeCompare(valB);
+  });
+  renderTable();
+}
+
+addBtn.addEventListener('click', () => openModal());
+cancelBtn.addEventListener('click', closeModal);
+
+saveBtn.addEventListener('click', () => {
+  const firstName = firstNameInput.value.trim();
+  const lastName = lastNameInput.value.trim();
+  const admissionNo = admissionNoInput.value.trim();
+
+  if(!firstName || !lastName || !admissionNo) {
+    alert('Please fill all fields.');
+    return;
+  }
+
+  if(editIndex !== null) {
+    students[editIndex] = { firstName, lastName, admissionNo };
+  } else {
+    students.push({ firstName, lastName, admissionNo });
+  }
+
+  students.sort((a,b) => a.firstName.toLowerCase().localeCompare(b.firstName.toLowerCase())); // auto sort
+  renderTable();
+  closeModal();
 });
+
+// Live search
+searchInput.addEventListener('input', renderTable);
 </script>
-{% endblock %}
+
+</body>
+</html>
