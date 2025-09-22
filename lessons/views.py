@@ -10,6 +10,7 @@ from django.http import JsonResponse
 from .models import Timetable
 from django.http import JsonResponse
 from .models import Teacher, Student, StudentPayment, ClassGroup
+from django.views.decorators.csrf import csrf_exempt
 TERM_FEE = 1500
 
 def home(request):
