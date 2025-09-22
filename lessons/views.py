@@ -234,24 +234,16 @@ def load_timetables(request):
 
 @login_required
 def student_payments(request):
-    # Get the logged-in teacher
     teacher = get_object_or_404(Teacher, user=request.user)
-    
-    # Only class teachers can see this section
+
     if not teacher.is_class_teacher:
         return redirect('teacher_dashboard')
 
-    # Get all classes this teacher is responsible for
     class_groups = teacher.class_groups.all()
+    selected_class_id = request.GET.get("class_group", "")
+    students = Student.objects.filter(class_group_id=selected_class_id) if selected_class_id else []
 
-    # Get selected class from GET params
-    selected_class_id = request.GET.get("class_group") or request.POST.get("class_group")
-    students = []
-
-    if selected_class_id:
-        # Fetch students in the selected class
-        students = Student.objects.filter(class_group_id=selected_class_id)
-
+    # Record payments
     if request.method == "POST":
         for student in students:
             amount_str = request.POST.get(f"amount_{student.id}")
@@ -263,14 +255,12 @@ def student_payments(request):
                             student=student,
                             amount=amount,
                             recorded_by=teacher,
-                            term="Term 1"  # Optional: you can make this dynamic
+                            term="Term 1"
                         )
-                        # Update student's amount_paid
                         student.amount_paid += amount
                         student.save()
                 except ValueError:
-                    continue  # Ignore invalid inputs
-        # Redirect back to the same page with the same class selected
+                    continue
         return redirect(f"{request.path}?class_group={selected_class_id}")
 
     context = {
@@ -279,3 +269,51 @@ def student_payments(request):
         "selected_class_id": selected_class_id,
     }
     return render(request, "lessons/student_payments.html", context)
+
+
+@login_required
+@csrf_exempt
+def add_student_ajax(request):
+    teacher = get_object_or_404(Teacher, user=request.user)
+    if request.method == "POST":
+        first_name = request.POST.get("first_name")
+        last_name = request.POST.get("last_name")
+        admission_number = request.POST.get("admission_number")
+        class_group_id = request.POST.get("class_group")
+        class_group = get_object_or_404(ClassGroup, id=class_group_id)
+
+        student = Student.objects.create(
+            first_name=first_name,
+            last_name=last_name,
+            admission_number=admission_number,
+            class_group=class_group
+        )
+        return JsonResponse({
+            "id": student.id,
+            "name": f"{student.first_name} {student.last_name}",
+            "balance": f"{student.balance:.2f}"
+        })
+
+
+@login_required
+@csrf_exempt
+def edit_student_ajax(request, student_id):
+    student = get_object_or_404(Student, id=student_id)
+    if request.method == "POST":
+        student.first_name = request.POST.get("first_name", student.first_name)
+        student.last_name = request.POST.get("last_name", student.last_name)
+        student.admission_number = request.POST.get("admission_number", student.admission_number)
+        student.save()
+        return JsonResponse({
+            "id": student.id,
+            "name": f"{student.first_name} {student.last_name}"
+        })
+
+
+@login_required
+@csrf_exempt
+def delete_student_ajax(request, student_id):
+    student = get_object_or_404(Student, id=student_id)
+    if request.method == "POST":
+        student.delete()
+        return JsonResponse({"success": True, "id": student_id})
