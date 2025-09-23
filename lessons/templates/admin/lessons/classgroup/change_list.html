@@ -1,1 +1,14 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static %}
+
+{% block object-tools %}
+  {{ block.super }}
+  <ul class="object-tools">
+    <li>
+      <a class="addlink" href="{% url 'admin_payments' %}">
+        💰 Payments Dashboard
+      </a>
+    </li>
+  </ul>
+{% endblock %}
 
