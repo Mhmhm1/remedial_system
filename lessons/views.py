@@ -341,7 +341,7 @@ def admin_payments_dashboard(request):
 
     # Count statuses
     total_students = students.count()
-    fully_paid = students.filter(amount_paid__gte=models.F("term_fee")).count()
+    fully_paid = students.filter(amount_paid__gte=F("term_fee")).count()
     unpaid = students.filter(amount_paid=0).count()
     partial = total_students - fully_paid - unpaid
 
