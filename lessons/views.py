@@ -12,6 +12,8 @@ from django.http import JsonResponse
 from .models import Teacher, Student, StudentPayment, ClassGroup
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum, F, ExpressionWrapper, FloatField
+from django.contrib.admin.views.decorators import staff_member_required
+
 TERM_FEE = 1500
 
 def home(request):
