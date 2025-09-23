@@ -1,22 +1,25 @@
 # lessons/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum
-from django.conf import settings
-import os
-from django.http import JsonResponse
-from .models import Teacher, Timetable, LessonRecord, Week, ClassGroup, Subject
-from django.http import JsonResponse
-from .models import Timetable
-from django.http import JsonResponse
-from .models import Teacher, Student, StudentPayment, ClassGroup
+from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import Sum, F, ExpressionWrapper, FloatField
-from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.admin.views.decorators import staff_member_required
-from django.db.models import Sum, Count, F
-from django.shortcuts import render
-from .models import Student, ClassGroup
+from django.http import JsonResponse
+from django.conf import settings
+
+from django.db.models import Sum, F, Count, ExpressionWrapper, FloatField
+
+import os
+
+from .models import (
+    Teacher,
+    Timetable,
+    LessonRecord,
+    Week,
+    ClassGroup,
+    Subject,
+    Student,
+    StudentPayment,
+)
 
 
 TERM_FEE = 1500
