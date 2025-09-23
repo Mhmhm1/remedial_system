@@ -377,4 +377,4 @@ def admin_payments_dashboard(request):
         # per-class summary
         "class_stats": class_stats,
     }
-    return render(request, "lessons/admin_payments_dashboard.html", context)
+    return render(request, "lessons/admin_payments.html", context)
