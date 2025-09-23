@@ -320,73 +320,51 @@ def delete_student_ajax(request, student_id):
         student.delete()
         return JsonResponse({"success": True, "id": student_id})
         
-@login_required
+@staff_member_required
 def admin_payments_dashboard(request):
-    if not request.user.is_staff:
-        return redirect('home')
+    selected_class = request.GET.get("class")
 
-    # Fetch all students and class groups
-    students = Student.objects.all().select_related('class_group')
+    # All classes
     class_groups = ClassGroup.objects.all()
 
-    # Optional filters
-    selected_class = request.GET.get("class", "")
-    payment_filter = request.GET.get("payment_status", "")
-
-    filtered_students = students
+    # Student queryset (filtered if a class is chosen)
+    students = Student.objects.all()
     if selected_class:
-        filtered_students = filtered_students.filter(class_group__id=selected_class)
+        students = students.filter(class_group_id=selected_class)
 
-    if payment_filter:
-        if payment_filter == "paid":
-            filtered_students = filtered_students.filter(amount_paid__gte=F('term_fee'))
-        elif payment_filter == "partial":
-            filtered_students = filtered_students.filter(amount_paid__gt=0, amount_paid__lt=F('term_fee'))
-        elif payment_filter == "unpaid":
-            filtered_students = filtered_students.filter(amount_paid=0)
+    # Global totals
+    total_paid = students.aggregate(total=Sum("amount_paid"))["total"] or 0
+    total_fees = students.aggregate(total=Sum("term_fee"))["total"] or 0
+    total_unpaid = total_fees - total_paid
 
-    # Calculate summary stats
+    # Count statuses
     total_students = students.count()
-    total_paid_amount = students.aggregate(total=Sum('amount_paid'))['total'] or 0
-    total_fees = students.aggregate(total=Sum('term_fee'))['total'] or 0
-    total_unpaid_amount = total_fees - total_paid_amount
-    partial_payments = students.filter(amount_paid__gt=0, amount_paid__lt=F('term_fee')).count()
-    paid_students = students.filter(amount_paid__gte=F('term_fee')).count()
-    unpaid_students = students.filter(amount_paid=0).count()
+    fully_paid = students.filter(amount_paid__gte=models.F("term_fee")).count()
+    unpaid = students.filter(amount_paid=0).count()
+    partial = total_students - fully_paid - unpaid
 
-    # Per-class stats
+    # Per-class stats (for summary table)
     class_stats = class_groups.annotate(
-        total_students=Sum(ExpressionWrapper(1, output_field=FloatField())),
-        total_paid=Sum('student__amount_paid'),
-        total_fees=Sum('student__term_fee'),
+        total_students=Count("students"),
+        total_paid=Sum("students__amount_paid"),
+        total_fees=Sum("students__term_fee"),
     )
 
-    if request.method == "POST":
-        student_id = request.POST.get("student_id")
-        new_amount = request.POST.get("amount")
-        try:
-            student = Student.objects.get(id=student_id)
-            amount = float(new_amount)
-            if amount >= 0:
-                student.amount_paid = amount
-                student.save()
-        except (Student.DoesNotExist, ValueError):
-            pass
-        return redirect('admin_payments_dashboard')
-
     context = {
-        "students": filtered_students,
         "class_groups": class_groups,
-        "summary": {
-            "total_students": total_students,
-            "paid_students": paid_students,
-            "unpaid_students": unpaid_students,
-            "partial_payments": partial_payments,
-            "total_paid_amount": total_paid_amount,
-            "total_unpaid_amount": total_unpaid_amount
-        },
-        "class_stats": class_stats,
+        "students": students,
         "selected_class": selected_class,
-        "payment_filter": payment_filter
+
+        # global totals
+        "total_students": total_students,
+        "total_paid": total_paid,
+        "total_fees": total_fees,
+        "total_unpaid": total_unpaid,
+        "fully_paid": fully_paid,
+        "unpaid": unpaid,
+        "partial": partial,
+
+        # per-class summary
+        "class_stats": class_stats,
     }
-    return render(request, "lessons/admin_payments.html", context)
+    return render(request, "lessons/admin_payments_dashboard.html", context)
