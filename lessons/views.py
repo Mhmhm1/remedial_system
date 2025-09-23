@@ -319,7 +319,8 @@ def delete_student_ajax(request, student_id):
     if request.method == "POST":
         student.delete()
         return JsonResponse({"success": True, "id": student_id})
-        @login_required
+        
+@login_required
 def admin_payments_dashboard(request):
     if not request.user.is_staff:
         return redirect('home')
