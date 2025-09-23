@@ -331,7 +331,7 @@ def delete_student_ajax(request, student_id):
         return JsonResponse({"success": True, "id": student_id})
         
 @staff_member_required
-def admin_payments_dashboard(request):
+def admin_payments(request):
     selected_class = request.GET.get("class")
 
     # All classes
