@@ -13,6 +13,11 @@ from .models import Teacher, Student, StudentPayment, ClassGroup
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum, F, ExpressionWrapper, FloatField
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.admin.views.decorators import staff_member_required
+from django.db.models import Sum, Count, F
+from django.shortcuts import render
+from .models import Student, ClassGroup
+
 
 TERM_FEE = 1500
 
