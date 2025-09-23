@@ -4,6 +4,10 @@ from django.contrib.admin import AdminSite
 from django import forms
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
+from django.urls import path
+from django.shortcuts import render
+from .models import Student, StudentPayment
+
 
 
 class MyAdminSite(AdminSite):
@@ -24,11 +28,29 @@ class SubjectAdmin(admin.ModelAdmin):
 # ----------------------------
 # ClassGroup Admin
 # ----------------------------
+
 @admin.register(ClassGroup)
 class ClassGroupAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
     search_fields = ('name',)
     change_list_template = "admin/lessons/classgroup/change_list.html"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path("payments-dashboard/", self.admin_site.admin_view(self.payments_dashboard), name="admin_payments"),
+        ]
+        return custom_urls + urls
+
+    def payments_dashboard(self, request):
+        students = Student.objects.all()
+        payments = StudentPayment.objects.all()
+
+        return render(request, "admin/lessons/payments_dashboard.html", {
+            "students": students,
+            "payments": payments,
+        })
+
 
 
 
