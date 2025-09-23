@@ -28,6 +28,8 @@ class SubjectAdmin(admin.ModelAdmin):
 class ClassGroupAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
     search_fields = ('name',)
+    change_list_template = "admin/lessons/classgroup/change_list.html"
+
 
 
 # ----------------------------
