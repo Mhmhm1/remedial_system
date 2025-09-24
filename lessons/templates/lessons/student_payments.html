@@ -31,13 +31,13 @@
             </thead>
             <tbody>
                 {% for student in students %}
-                <tr>
+                <tr data-id="{{ student.id }}">
                     <td>{{ student.first_name }}</td>
                     <td>{{ student.last_name }}</td>
                     <td>{{ student.admission_number }}</td>
                     <td>
-                        <button class="action-btn" onclick="editStudent({{ forloop.counter0 }})">Edit</button>
-                        <button class="delete-btn" onclick="deleteStudent({{ forloop.counter0 }})">Delete</button>
+                        <button class="action-btn" onclick="editStudent({{ student.id }})">Edit</button>
+                        <button class="delete-btn" onclick="deleteStudent({{ student.id }})">Delete</button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -46,7 +46,6 @@
     {% else %}
         <p>Please select a class to see students.</p>
     {% endif %}
-
 </div>
 
 <!-- Modal for Add/Edit -->
@@ -63,36 +62,7 @@
     </div>
 </div>
 
-<style>
-  /* Modal and table styling */
-  body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
-  h1, h2 { color: #333; }
-  button { padding: 8px 12px; margin-right: 5px; border: none; border-radius: 4px; cursor: pointer; }
-  .action-btn { background: #007bff; color: #fff; }
-  .action-btn:hover { background: #0056b3; }
-  .delete-btn { background: #dc3545; color: #fff; }
-  .delete-btn:hover { background: #b02a37; }
-  input.search-box { padding: 8px; width: 300px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #ccc; }
-  table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #fff; }
-  th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-  th { background-color: #f4f4f4; cursor: pointer; }
-  tbody tr:hover { background-color: #f1f1f1; }
-  .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-  .modal-content { background-color: #fff; padding: 20px; border-radius: 8px; width: 320px; }
-  .modal input { width: 100%; padding: 8px; margin: 5px 0; border-radius: 4px; border: 1px solid #ccc; }
-</style>
-
 <script>
-let students = [];
-{% if selected_class_id and students %}
-students = [
-  {% for student in students %}
-    {firstName: "{{ student.first_name }}", lastName: "{{ student.last_name }}", admissionNo: "{{ student.admission_number }}"},
-  {% endfor %}
-];
-{% endif %}
-
-let editIndex = null;
 const modal = document.getElementById('studentModal');
 const addBtn = document.getElementById('addStudentBtn');
 const saveBtn = document.getElementById('saveBtn');
@@ -104,83 +74,108 @@ const admissionNoInput = document.getElementById('admissionNo');
 const searchInput = document.getElementById('searchInput');
 const studentTableBody = document.querySelector('#studentTable tbody');
 
-function openModal(edit = false, index = null) {
-  modal.style.display = 'flex';
-  if(edit) {
-    modalTitle.textContent = 'Edit Student';
-    firstNameInput.value = students[index].firstName;
-    lastNameInput.value = students[index].lastName;
-    admissionNoInput.value = students[index].admissionNo;
-    editIndex = index;
-  } else {
-    modalTitle.textContent = 'Add Student';
-    firstNameInput.value = '';
-    lastNameInput.value = '';
-    admissionNoInput.value = '';
-    editIndex = null;
-  }
+let currentStudentId = null;
+
+// Open modal
+function openModal(edit = false, studentId = null) {
+    modal.style.display = 'flex';
+    currentStudentId = studentId;
+
+    if(edit && studentId) {
+        modalTitle.textContent = 'Edit Student';
+        const row = document.querySelector(`tr[data-id='${studentId}']`);
+        firstNameInput.value = row.children[0].textContent;
+        lastNameInput.value = row.children[1].textContent;
+        admissionNoInput.value = row.children[2].textContent;
+    } else {
+        modalTitle.textContent = 'Add Student';
+        firstNameInput.value = '';
+        lastNameInput.value = '';
+        admissionNoInput.value = '';
+    }
 }
 
 function closeModal() { modal.style.display = 'none'; }
 
-function renderTable() {
-  const filter = searchInput.value.toLowerCase();
-  if(!studentTableBody) return;
-  studentTableBody.innerHTML = '';
-  students.forEach((s, index) => {
-    if (
-      s.firstName.toLowerCase().includes(filter) ||
-      s.lastName.toLowerCase().includes(filter) ||
-      s.admissionNo.toLowerCase().includes(filter)
-    ) {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${s.firstName}</td>
-        <td>${s.lastName}</td>
-        <td>${s.admissionNo}</td>
-        <td>
-          <button class="action-btn" onclick="editStudent(${index})">Edit</button>
-          <button class="delete-btn" onclick="deleteStudent(${index})">Delete</button>
-        </td>
-      `;
-      studentTableBody.appendChild(row);
+// AJAX Save
+if(saveBtn) saveBtn.addEventListener('click', () => {
+    const firstName = firstNameInput.value.trim();
+    const lastName = lastNameInput.value.trim();
+    const admissionNo = admissionNoInput.value.trim();
+    const classGroup = document.getElementById('class_group').value;
+
+    if(!firstName || !lastName || !admissionNo) {
+        alert('Please fill all fields.');
+        return;
     }
-  });
+
+    const url = currentStudentId
+        ? `/edit-student/${currentStudentId}/`   // edit endpoint
+        : `/add-student/`;                      // add endpoint
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `first_name=${firstName}&last_name=${lastName}&admission_number=${admissionNo}&class_group=${classGroup}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(currentStudentId) {
+            const row = document.querySelector(`tr[data-id='${currentStudentId}']`);
+            row.children[0].textContent = firstName;
+            row.children[1].textContent = lastName;
+            row.children[2].textContent = admissionNo;
+        } else {
+            const newRow = document.createElement('tr');
+            newRow.setAttribute('data-id', data.id);
+            newRow.innerHTML = `
+                <td>${firstName}</td>
+                <td>${lastName}</td>
+                <td>${admissionNo}</td>
+                <td>
+                    <button class="action-btn" onclick="editStudent(${data.id})">Edit</button>
+                    <button class="delete-btn" onclick="deleteStudent(${data.id})">Delete</button>
+                </td>
+            `;
+            studentTableBody.appendChild(newRow);
+        }
+        closeModal();
+    });
+});
+
+// Delete
+function deleteStudent(studentId) {
+    if(!confirm('Are you sure you want to delete this student?')) return;
+
+    fetch(`/delete-student/${studentId}/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success) {
+            const row = document.querySelector(`tr[data-id='${studentId}']`);
+            row.remove();
+        }
+    });
 }
 
-function editStudent(index) { openModal(true, index); }
+// Edit button
+function editStudent(studentId) { openModal(true, studentId); }
 
-function deleteStudent(index) {
-  if(confirm('Are you sure you want to delete this student?')) {
-    students.splice(index, 1);
-    renderTable();
-  }
-}
-
-function sortTable(colIndex) {
-  students.sort((a,b) => {
-    const valA = Object.values(a)[colIndex].toLowerCase();
-    const valB = Object.values(b)[colIndex].toLowerCase();
-    return valA.localeCompare(valB);
-  });
-  renderTable();
-}
+// Search filter
+if(searchInput) searchInput.addEventListener('input', () => {
+    const filter = searchInput.value.toLowerCase();
+    Array.from(studentTableBody.children).forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(filter) ? '' : 'none';
+    });
+});
 
 if(addBtn) addBtn.addEventListener('click', () => openModal());
 if(cancelBtn) cancelBtn.addEventListener('click', closeModal);
-if(saveBtn) saveBtn.addEventListener('click', () => {
-  const firstName = firstNameInput.value.trim();
-  const lastName = lastNameInput.value.trim();
-  const admissionNo = admissionNoInput.value.trim();
-  if(!firstName || !lastName || !admissionNo) { alert('Please fill all fields.'); return; }
-  if(editIndex !== null) { students[editIndex] = { firstName, lastName, admissionNo }; }
-  else { students.push({ firstName, lastName, admissionNo }); }
-  students.sort((a,b) => a.firstName.toLowerCase().localeCompare(b.firstName.toLowerCase()));
-  renderTable();
-  closeModal();
-});
-
-if(searchInput) searchInput.addEventListener('input', renderTable);
 </script>
-
 {% endblock %}
