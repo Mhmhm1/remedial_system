@@ -279,7 +279,7 @@ def student_payments(request):
                             term="Term 1"
                         )
                         student.amount_paid = amount  # replace with new value
-                         student.save()
+                        student.save()
 
                 except (InvalidOperation, ValueError):
                     continue
