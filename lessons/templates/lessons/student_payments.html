@@ -41,7 +41,7 @@
                         <input type="number" step="0.01" name="amount_{{ student.id }}" placeholder="Enter amount" 
                                value="{{ student.amount_paid }}" onchange="updatePayment({{ student.id }}, this.value)">
                     </td>
-                    <td>{{ student.balance }}</td>
+                    <td class="balance">{{ student.balance }}</td>
                     <td>
                         <button type="button" class="action-btn" onclick="editStudent({{ student.id }})">Edit</button>
                         <button type="button" class="delete-btn" onclick="deleteStudent({{ student.id }})">Delete</button>
@@ -54,11 +54,11 @@
         <!-- Statistics panel -->
         <div id="statistics" style="margin-top:20px; background:#f4f4f4; padding:10px; border-radius:6px;">
             <strong>Statistics:</strong>
-            <span>Total Students: <span id="statTotal">{{ students|length }}</span></span> |
-            <span>Total Paid: <span id="statPaid">{{ students|sum:"amount_paid" }}</span></span> |
-            <span>Total Unpaid: <span id="statUnpaid">{{ students|sum:"term_fee"|add:-students|sum:"amount_paid" }}</span></span> |
-            <span>Fully Paid: <span id="statFullyPaid">{{ students|filter:"amount_paid__gte=1500"|length }}</span></span> |
-            <span>Partial: <span id="statPartial">{{ students|filter:"amount_paid__gt=0"|exclude:"amount_paid__gte=1500"|length }}</span></span>
+            <span>Total Students: <span id="statTotal">{{ total_students }}</span></span> |
+            <span>Total Paid: <span id="statPaid">{{ total_paid }}</span></span> |
+            <span>Total Unpaid: <span id="statUnpaid">{{ total_unpaid }}</span></span> |
+            <span>Fully Paid: <span id="statFullyPaid">{{ fully_paid }}</span></span> |
+            <span>Partial: <span id="statPartial">{{ partial_paid }}</span></span>
         </div>
 
     {% else %}
@@ -169,96 +169,4 @@ saveBtn.addEventListener('click', () => {
     formData.append('first_name', firstName);
     formData.append('last_name', lastName);
     formData.append('admission_number', admissionNo);
-    formData.append('class_group', document.getElementById('class_group').value);
-
-    if(editStudentId) {
-        url = `{% url 'edit_student_ajax' 0 %}`.replace('/0/', `/${editStudentId}/`);
-    } else {
-        url = `{% url 'add_student_ajax' %}`;
-    }
-
-    fetch(url, {method, body: formData, headers: {'X-CSRFToken': '{{ csrf_token }}'}})
-    .then(res => res.json())
-    .then(data => {
-        refreshRow({id: data.id, first_name: firstName, last_name: lastName, admission_number: admissionNo});
-        closeModal();
-    })
-    .catch(err => console.error(err));
-});
-
-// Delete student via AJAX
-function deleteStudent(studentId) {
-    if(!confirm('Are you sure you want to delete this student?')) return;
-    const url = `{% url 'delete_student_ajax' 0 %}`.replace('/0/', `/${studentId}/`);
-    fetch(url, {method:'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'}})
-    .then(res => res.json())
-    .then(data => {
-        if(data.success) {
-            const row = document.querySelector(`tr[data-id="${studentId}"]`);
-            row.remove();
-            refreshStatistics();
-        }
-    });
-}
-
-function editStudent(studentId) { openModal(true, studentId); }
-
-// Table search
-if(searchInput) searchInput.addEventListener('input', () => {
-    const filter = searchInput.value.toLowerCase();
-    studentTableBody.querySelectorAll('tr').forEach(row => {
-        const first = row.querySelector('.first-name').textContent.toLowerCase();
-        const last = row.querySelector('.last-name').textContent.toLowerCase();
-        const adm = row.querySelector('.admission-no').textContent.toLowerCase();
-        row.style.display = first.includes(filter) || last.includes(filter) || adm.includes(filter) ? '' : 'none';
-    });
-    refreshStatistics();
-});
-
-// Table sorting
-function sortTable(colIndex) {
-    const rows = Array.from(studentTableBody.querySelectorAll('tr'));
-    rows.sort((a,b) => {
-        const valA = a.children[colIndex].textContent.toLowerCase();
-        const valB = b.children[colIndex].textContent.toLowerCase();
-        return valA.localeCompare(valB);
-    });
-    rows.forEach(r => studentTableBody.appendChild(r));
-}
-
-// Payment update via AJAX
-function updatePayment(studentId, value){
-    const amount = parseFloat(value) || 0;
-    fetch(`/update-payment-ajax/${studentId}/`, {
-        method: 'POST',
-        headers: {'X-CSRFToken':'{{ csrf_token }}', 'Content-Type':'application/x-www-form-urlencoded'},
-        body: `amount=${amount}`
-    }).then(res=>res.json())
-      .then(data=>{
-        const row = document.querySelector(`tr[data-id="${studentId}"]`);
-        row.querySelector('.balance').textContent = (1500 - data.amountPaid).toFixed(2);
-        refreshStatistics();
-      });
-}
-
-// Update statistics dynamically
-function refreshStatistics(){
-    let total = 0, paid=0, fully=0, partial=0;
-    studentTableBody.querySelectorAll('tr').forEach(r=>{
-        if(r.style.display==='none') return;
-        total++;
-        const amt = parseFloat(r.querySelector('input[name^="amount_"]').value) || 0;
-        paid += amt;
-        if(amt>=1500) fully++; else if(amt>0) partial++;
-    });
-    document.getElementById('statTotal').textContent = total;
-    document.getElementById('statPaid').textContent = paid.toFixed(2);
-    document.getElementById('statUnpaid').textContent = (total*1500 - paid).toFixed(2);
-    document.getElementById('statFullyPaid').textContent = fully;
-    document.getElementById('statPartial').textContent = partial;
-}
-
-if(addBtn) addBtn.addEventListener('click', () => openModal());
-if(cancelBtn) cancelBtn.addEventListener('click', closeModal);
-</script>
-{% endblock %}
+    formData.append('class_group', document.getElementById('class_group').
