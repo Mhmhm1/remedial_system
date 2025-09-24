@@ -4,8 +4,7 @@
 {% block content %}
 <div class="container mt-4">
     <h2>Record Student Payments</h2>
-</div>
-{% endblock %}
+
     <!-- Class selection filter -->
     <form method="get" class="mb-3">
         <label for="class_group">Select Class:</label>
@@ -21,45 +20,49 @@
         <button id="addStudentBtn" style="margin-bottom: 10px;">Add Student</button>
         <input type="text" id="searchInput" class="search-box" placeholder="Search students...">
 
-        <table id="studentTable" class="table table-bordered">
-            <thead>
-                <tr>
-                    <th onclick="sortTable(0)">First Name ▲▼</th>
-                    <th onclick="sortTable(1)">Last Name</th>
-                    <th onclick="sortTable(2)">Admission No.</th>
-                    <th>Amount Paid</th>
-                    <th>Balance</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for student in students %}
-                <tr data-id="{{ student.id }}">
-                    <td class="first-name">{{ student.first_name }}</td>
-                    <td class="last-name">{{ student.last_name }}</td>
-                    <td class="admission-no">{{ student.admission_number }}</td>
-                    <td>
-                        <input type="number" step="0.01" name="amount_{{ student.id }}" placeholder="Enter amount" 
-                               value="{{ student.amount_paid }}" onchange="updatePayment({{ student.id }}, this.value)">
-                    </td>
-                    <td class="balance">{{ student.balance }}</td>
-                    <td>
-                        <button type="button" class="action-btn" onclick="editStudent({{ student.id }})">Edit</button>
-                        <button type="button" class="delete-btn" onclick="deleteStudent({{ student.id }})">Delete</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <form method="post" id="paymentsForm">
+            {% csrf_token %}
+            <table id="studentTable" class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable(0)">First Name ▲▼</th>
+                        <th onclick="sortTable(1)">Last Name ▲▼</th>
+                        <th onclick="sortTable(2)">Admission No. ▲▼</th>
+                        <th>Amount Paid</th>
+                        <th>Balance</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr data-id="{{ student.id }}">
+                        <td class="first-name">{{ student.first_name }}</td>
+                        <td class="last-name">{{ student.last_name }}</td>
+                        <td class="admission-no">{{ student.admission_number }}</td>
+                        <td>
+                            <input type="number" step="0.01" name="amount_{{ student.id }}" placeholder="Enter amount" 
+                                   value="{{ student.amount_paid }}" onchange="updatePayment({{ student.id }}, this.value)">
+                        </td>
+                        <td class="balance">{{ student.balance }}</td>
+                        <td>
+                            <button type="button" class="action-btn" onclick="editStudent({{ student.id }})">Edit</button>
+                            <button type="button" class="delete-btn" onclick="deleteStudent({{ student.id }})">Delete</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <button type="submit" class="btn btn-success">Submit Payments</button>
+        </form>
 
         <!-- Statistics panel -->
-    <div id="statistics" style="margin-top:20px; background:#f4f4f4; padding:10px; border-radius:6px;">
-    <strong>Statistics:</strong>
-    <span>Total Students: <span id="statTotal">{{ students|length }}</span></span> |
-    <span>Total Paid: <span id="statPaid">{{ total_paid }}</span></span> |
-    <span>Total Unpaid: <span id="statUnpaid">{{ total_unpaid }}</span></span> |
-    <span>Fully Paid: <span id="statFullyPaid">{{ fully_paid }}</span></span> |
-    <span>Partial: <span id="statPartial">{{ partial_paid }}</span></span>
+        <div id="statistics" style="margin-top:20px; background:#f4f4f4; padding:10px; border-radius:6px;">
+            <strong>Statistics:</strong>
+            <span>Total Students: <span id="statTotal">{{ total_students }}</span></span> |
+            <span>Total Paid: <span id="statPaid">{{ total_paid }}</span></span> |
+            <span>Total Unpaid: <span id="statUnpaid">{{ total_unpaid }}</span></span> |
+            <span>Fully Paid: <span id="statFullyPaid">{{ fully_paid }}</span></span> |
+            <span>Partial: <span id="statPartial">{{ partial_paid }}</span></span>
         </div>
 
     {% else %}
@@ -113,6 +116,7 @@ const studentTableBody = document.querySelector('#studentTable tbody');
 
 let editStudentId = null;
 
+// Modal open/close
 function openModal(edit=false, studentId=null) {
     modal.style.display = 'flex';
     if(edit) {
@@ -130,44 +134,103 @@ function openModal(edit=false, studentId=null) {
         editStudentId = null;
     }
 }
-
 function closeModal() { modal.style.display = 'none'; }
 
-function refreshRow(student) {
-    const existingRow = document.querySelector(`tr[data-id="${student.id}"]`);
-    if(existingRow) {
-        existingRow.querySelector('.first-name').textContent = student.first_name;
-        existingRow.querySelector('.last-name').textContent = student.last_name;
-        existingRow.querySelector('.admission-no').textContent = student.admission_number;
-    } else {
-        const row = document.createElement('tr');
-        row.dataset.id = student.id;
-        row.innerHTML = `
-            <td class="first-name">${student.first_name}</td>
-            <td class="last-name">${student.last_name}</td>
-            <td class="admission-no">${student.admission_number}</td>
-            <td><input type="number" step="0.01" name="amount_${student.id}" placeholder="Enter amount" onchange="updatePayment(${student.id}, this.value)"></td>
-            <td class="balance">1500</td>
-            <td>
-                <button type="button" class="action-btn" onclick="editStudent(${student.id})">Edit</button>
-                <button type="button" class="delete-btn" onclick="deleteStudent(${student.id})">Delete</button>
-            </td>
-        `;
-        studentTableBody.appendChild(row);
-    }
-}
-
-// Add / Edit student via AJAX
+// Add/Edit student via AJAX
 saveBtn.addEventListener('click', () => {
     const firstName = firstNameInput.value.trim();
     const lastName = lastNameInput.value.trim();
     const admissionNo = admissionNoInput.value.trim();
     if(!firstName || !lastName || !admissionNo) { alert('Please fill all fields'); return; }
 
-    let url = '';
-    let method = 'POST';
-    let formData = new FormData();
+    const formData = new FormData();
     formData.append('first_name', firstName);
     formData.append('last_name', lastName);
     formData.append('admission_number', admissionNo);
-    formData.append('class_group', document.getElementById('class_group').
+    formData.append('class_group', document.getElementById('class_group').value);
+
+    let url = editStudentId ? `{% url 'edit_student_ajax' 0 %}`.replace('/0/', `/${editStudentId}/`) : `{% url 'add_student_ajax' %}`;
+
+    fetch(url, {method:'POST', body: formData, headers:{'X-CSRFToken':'{{ csrf_token }}'}})
+    .then(res=>res.json())
+    .then(data=>{
+        refreshRow({id:data.id, first_name:firstName, last_name:lastName, admission_number:admissionNo});
+        closeModal();
+        refreshStatistics();
+    }).catch(err=>console.error(err));
+});
+
+// Delete student via AJAX
+function deleteStudent(studentId){
+    if(!confirm('Are you sure you want to delete this student?')) return;
+    fetch(`{% url 'delete_student_ajax' 0 %}`.replace('/0/', `/${studentId}/`), {method:'POST', headers:{'X-CSRFToken':'{{ csrf_token }}'}})
+    .then(res=>res.json()).then(data=>{
+        if(data.success){
+            document.querySelector(`tr[data-id="${studentId}"]`).remove();
+            refreshStatistics();
+        }
+    });
+}
+
+// Edit button
+function editStudent(studentId){ openModal(true, studentId); }
+
+// Table search
+if(searchInput) searchInput.addEventListener('input', ()=>{
+    const filter = searchInput.value.toLowerCase();
+    studentTableBody.querySelectorAll('tr').forEach(row=>{
+        const first = row.querySelector('.first-name').textContent.toLowerCase();
+        const last = row.querySelector('.last-name').textContent.toLowerCase();
+        const adm = row.querySelector('.admission-no').textContent.toLowerCase();
+        row.style.display = first.includes(filter) || last.includes(filter) || adm.includes(filter) ? '' : 'none';
+    });
+    refreshStatistics();
+});
+
+// Table sorting
+function sortTable(colIndex){
+    const rows = Array.from(studentTableBody.querySelectorAll('tr'));
+    rows.sort((a,b)=>{
+        const valA = a.children[colIndex].textContent.toLowerCase();
+        const valB = b.children[colIndex].textContent.toLowerCase();
+        return valA.localeCompare(valB);
+    });
+    rows.forEach(r=>studentTableBody.appendChild(r));
+}
+
+// Update payment via AJAX
+function updatePayment(studentId, value){
+    const amount = parseFloat(value) || 0;
+    fetch(`/update-payment-ajax/${studentId}/`, {
+        method:'POST',
+        headers:{'X-CSRFToken':'{{ csrf_token }}','Content-Type':'application/x-www-form-urlencoded'},
+        body:`amount=${amount}`
+    }).then(res=>res.json()).then(data=>{
+        const row = document.querySelector(`tr[data-id="${studentId}"]`);
+        row.querySelector('.balance').textContent = (1500 - data.amountPaid).toFixed(2);
+        refreshStatistics();
+    });
+}
+
+// Refresh statistics dynamically
+function refreshStatistics(){
+    let total=0, paid=0, fully=0, partial=0;
+    studentTableBody.querySelectorAll('tr').forEach(r=>{
+        if(r.style.display==='none') return;
+        total++;
+        const amt = parseFloat(r.querySelector('input[name^="amount_"]').value) || 0;
+        paid += amt;
+        if(amt>=1500) fully++; else if(amt>0) partial++;
+    });
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statPaid').textContent = paid.toFixed(2);
+    document.getElementById('statUnpaid').textContent = (total * 1500 - paid).toFixed(2);
+    document.getElementById('statFullyPaid').textContent = fully;
+    document.getElementById('statPartial').textContent = partial;
+}
+
+// Open/close modal buttons
+if(addBtn) addBtn.addEventListener('click', () => openModal());
+if(cancelBtn) cancelBtn.addEventListener('click', closeModal);
+</script>
+{% endblock %}
