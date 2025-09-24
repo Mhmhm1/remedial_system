@@ -249,15 +249,15 @@ def load_timetables(request):
 def student_payments(request):
     teacher = get_object_or_404(Teacher, user=request.user)
 
-    if not teacher.is_class_teacher:
+    # If teacher has no assigned class, deny access
+    if not hasattr(teacher, "main_class") or teacher.main_class is None:
         return redirect('teacher_dashboard')
 
-    class_groups = teacher.class_groups.all()
-    selected_class_id = request.GET.get("class_group", "")
-    students = Student.objects.filter(class_group_id=selected_class_id) if selected_class_id else Student.objects.none()
+    students = Student.objects.filter(class_group=teacher.main_class)
+
     # Compute statistics
     total_students = students.count()
-    total_fee_per_student = Decimal('1500.00')  # assuming each term fee is 1500
+    total_fee_per_student = Decimal('1500.00')
     total_paid = sum(s.amount_paid for s in students)
     total_unpaid = total_students * total_fee_per_student - total_paid
     fully_paid = sum(1 for s in students if s.amount_paid >= total_fee_per_student)
@@ -269,7 +269,7 @@ def student_payments(request):
             amount_str = request.POST.get(f"amount_{student.id}")
             if amount_str:
                 try:
-                    amount = Decimal(amount_str)  # Use Decimal to match amount_paid type
+                    amount = Decimal(amount_str)
                     if amount > 0:
                         StudentPayment.objects.create(
                             student=student,
@@ -277,17 +277,14 @@ def student_payments(request):
                             recorded_by=teacher,
                             term="Term 1"
                         )
-                        student.amount_paid = amount  # replace with new value
+                        student.amount_paid = amount
                         student.save()
-
                 except (InvalidOperation, ValueError):
                     continue
-        return redirect(f"{request.path}?class_group={selected_class_id}")
+        return redirect(request.path)
 
     context = {
-        "class_groups": class_groups,
         "students": students,
-        "selected_class_id": selected_class_id,
         "total_students": total_students,
         "total_paid": total_paid,
         "total_unpaid": total_unpaid,
