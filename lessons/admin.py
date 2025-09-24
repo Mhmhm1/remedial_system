@@ -31,14 +31,18 @@ class SubjectAdmin(admin.ModelAdmin):
 
 @admin.register(ClassGroup)
 class ClassGroupAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name')
-    search_fields = ('name',)
+    list_display = ("id", "name", "class_teacher")  # Show class teacher in the list
+    search_fields = ("name", "class_teacher__user__username", "class_teacher__user__first_name", "class_teacher__user__last_name")
     change_list_template = "admin/lessons/classgroup/change_list.html"
 
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
-            path("payments-dashboard/", self.admin_site.admin_view(self.payments_dashboard), name="admin_payments"),
+            path(
+                "payments-dashboard/",
+                self.admin_site.admin_view(self.payments_dashboard),
+                name="admin_payments"
+            ),
         ]
         return custom_urls + urls
 
