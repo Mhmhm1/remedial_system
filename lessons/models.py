@@ -20,11 +20,16 @@ class Subject(models.Model):
 # ClassGroup model
 # ----------------------------
 class ClassGroup(models.Model):
-    name = models.CharField(max_length=50)  # Form 1, Form 2, etc.
+    name = models.CharField(max_length=50)
+    class_teacher = models.OneToOneField(
+        "Teacher",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="main_class"
+    )
 
     def __str__(self):
         return self.name
-
 
 # ----------------------------
 # Teacher model
