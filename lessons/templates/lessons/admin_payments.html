@@ -13,7 +13,7 @@
     <select name="class" id="class" onchange="this.form.submit()">
       <option value="">All Classes</option>
       {% for group in class_groups %}
-        <option value="{{ group.id }}" {% ifselected_class == group.id|stringformat:"s" %}selected{% endif %}>
+        <option value="{{ group.id }}" {% if selected_class == group.id|stringformat:"s" %}selected{% endif %}>
           {{ group.name }}
         </option>
       {% endfor %}
