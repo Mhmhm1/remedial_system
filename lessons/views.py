@@ -278,8 +278,9 @@ def student_payments(request):
                             recorded_by=teacher,
                             term="Term 1"
                         )
-                        student.amount_paid += amount  # Decimal + Decimal
-                        student.save()
+                        student.amount_paid = amount  # replace with new value
+                         student.save()
+
                 except (InvalidOperation, ValueError):
                     continue
         return redirect(f"{request.path}?class_group={selected_class_id}")
