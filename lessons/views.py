@@ -331,16 +331,22 @@ def delete_student_ajax(request, student_id):
         return JsonResponse({"success": True, "id": student_id})
         
 @staff_member_required
+@staff_member_required
 def admin_payments(request):
-    selected_class = request.GET.get("class")
+    selected_class_id = request.GET.get("class")
+    selected_class_obj = None
 
     # All classes
     class_groups = ClassGroup.objects.all()
 
     # Student queryset (filtered if a class is chosen)
     students = Student.objects.all()
-    if selected_class:
-        students = students.filter(class_group_id=selected_class)
+    if selected_class_id:
+        try:
+            selected_class_obj = ClassGroup.objects.get(id=selected_class_id)
+            students = students.filter(class_group=selected_class_obj)
+        except ClassGroup.DoesNotExist:
+            selected_class_obj = None  # fallback if invalid ID is passed
 
     # Global totals
     total_paid = students.aggregate(total=Sum("amount_paid"))["total"] or 0
@@ -363,7 +369,8 @@ def admin_payments(request):
     context = {
         "class_groups": class_groups,
         "students": students,
-        "selected_class": selected_class,
+        "selected_class_id": selected_class_id,
+        "selected_class_obj": selected_class_obj,
 
         # global totals
         "total_students": total_students,
