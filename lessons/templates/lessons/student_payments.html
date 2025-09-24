@@ -68,7 +68,7 @@
 
 <!-- Student List -->
 <div class="module">
-  <h2>👩‍🎓 Students{% if selected_class %} in {{ class_groups.get(id=selected_class).name }}{% endif %}</h2>
+<h2>👩‍🎓 Students{% if selected_class_obj %} in {{ selected_class_obj.name }}{% endif %}</h2>
   <table class="grp-table">
     <thead>
       <tr>
