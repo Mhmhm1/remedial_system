@@ -254,8 +254,7 @@ def student_payments(request):
 
     class_groups = teacher.class_groups.all()
     selected_class_id = request.GET.get("class_group", "")
-    students = Student.objects.filter(class_group_id=selected_class_id) if selected_class_id else []
-
+    students = Student.objects.filter(class_group_id=selected_class_id) if selected_class_id else Student.objects.none()
     # Compute statistics
     total_students = students.count()
     total_fee_per_student = Decimal('1500.00')  # assuming each term fee is 1500
