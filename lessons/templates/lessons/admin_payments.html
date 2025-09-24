@@ -1,1 +1,108 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
 
+{% block content %}
+<div class="module">
+  <h1>💰 Payments Dashboard</h1>
+</div>
+
+<!-- Class Filter -->
+<div class="module">
+  <form method="get" action="">
+    <label for="class"><strong>Filter by Class:</strong></label>
+    <select name="class" id="class" onchange="this.form.submit()">
+      <option value="">All Classes</option>
+      {% for group in class_groups %}
+        <option value="{{ group.id }}" {% ifselected_class == group.id|stringformat:"s" %}selected{% endif %}>
+          {{ group.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+<!-- Global Totals -->
+<div class="module">
+  <h2>📊 Summary</h2>
+  <table class="grp-table">
+    <tbody>
+      <tr><th>Total Students</th><td>{{ total_students }}</td></tr>
+      <tr><th>Fully Paid</th><td>{{ fully_paid }}</td></tr>
+      <tr><th>Unpaid</th><td>{{ unpaid }}</td></tr>
+      <tr><th>Partial</th><td>{{ partial }}</td></tr>
+      <tr><th>Total Fees</th><td>{{ total_fees }}</td></tr>
+      <tr><th>Total Paid</th><td>{{ total_paid }}</td></tr>
+      <tr><th>Total Unpaid</th><td>{{ total_unpaid }}</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Per-Class Summary -->
+<div class="module">
+  <h2>🏫 Per-Class Breakdown</h2>
+  <table class="grp-table">
+    <thead>
+      <tr>
+        <th>Class</th>
+        <th>Total Students</th>
+        <th>Total Fees</th>
+        <th>Total Paid</th>
+        <th>Total Unpaid</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for stat in class_stats %}
+      <tr>
+        <td>{{ stat.name }}</td>
+        <td>{{ stat.total_students }}</td>
+        <td>{{ stat.total_fees|default:0 }}</td>
+        <td>{{ stat.total_paid|default:0 }}</td>
+        <td>{{ stat.total_fees|default:0|add:"-"|add:stat.total_paid|default:0 }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5">No class data available.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Student List -->
+<div class="module">
+  <h2>👩‍🎓 Students{% if selected_class %} in {{ class_groups.get(id=selected_class).name }}{% endif %}</h2>
+  <table class="grp-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Class</th>
+        <th>Term Fee</th>
+        <th>Amount Paid</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for student in students %}
+      <tr>
+        <td>{{ student.name }}</td>
+        <td>{{ student.class_group.name }}</td>
+        <td>{{ student.term_fee }}</td>
+        <td>{{ student.amount_paid }}</td>
+        <td>
+          {% if student.amount_paid >= student.term_fee %}
+            <span style="color:green;font-weight:bold;">Fully Paid</span>
+          {% elif student.amount_paid == 0 %}
+            <span style="color:red;font-weight:bold;">Unpaid</span>
+          {% else %}
+            <span style="color:orange;font-weight:bold;">Partial</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5">No students found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
