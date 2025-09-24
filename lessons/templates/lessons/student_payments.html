@@ -5,18 +5,7 @@
 <div class="container mt-4">
     <h2>Record Student Payments</h2>
 
-    <!-- Class selection filter -->
-    <form method="get" class="mb-3">
-        <label for="class_group">Select Class:</label>
-        <select name="class_group" id="class_group" onchange="this.form.submit()">
-            <option value="">--Choose--</option>
-            {% for cls in class_groups %}
-                <option value="{{ cls.id }}" {% if selected_class_id == cls.id|stringformat:"s" %}selected{% endif %}>{{ cls.name }}</option>
-            {% endfor %}
-        </select>
-    </form>
-
-    {% if selected_class_id %}
+    {% if students %}
         <button id="addStudentBtn" style="margin-bottom: 10px;">Add Student</button>
         <input type="text" id="searchInput" class="search-box" placeholder="Search students...">
 
@@ -66,7 +55,7 @@
         </div>
 
     {% else %}
-        <p>Please select a class to see students.</p>
+        <p>No students found for your class.</p>
     {% endif %}
 </div>
 
@@ -137,12 +126,11 @@ function openModal(edit=false, studentId=null) {
 function closeModal() { modal.style.display = 'none'; }
 
 // Add/Edit student via AJAX
-// Add/Edit student via AJAX
 saveBtn.addEventListener('click', () => {
     const firstName = firstNameInput.value.trim();
     const lastName = lastNameInput.value.trim();
     const admissionNo = admissionNoInput.value.trim();
-    const classGroupId = document.getElementById('class_group').value;
+    const classGroupId = "{{ class_group.id }}";  // teacher’s class
 
     if(!firstName || !lastName || !admissionNo) { 
         alert('Please fill all fields'); 
@@ -166,13 +154,11 @@ saveBtn.addEventListener('click', () => {
         .then(res => res.json())
         .then(data => {
             if(editStudentId){
-                // Editing: update the row in the table
                 const row = document.querySelector(`tr[data-id="${editStudentId}"]`);
                 row.querySelector('.first-name').textContent = firstName;
                 row.querySelector('.last-name').textContent = lastName;
                 row.querySelector('.admission-no').textContent = admissionNo;
             } else {
-                // Adding: create a new row
                 const row = document.createElement('tr');
                 row.setAttribute('data-id', data.id);
                 row.innerHTML = `
@@ -190,7 +176,6 @@ saveBtn.addEventListener('click', () => {
                 studentTableBody.appendChild(row);
             }
 
-            // Reset modal
             editStudentId = null;
             closeModal();
             refreshStatistics();
@@ -210,7 +195,6 @@ function deleteStudent(studentId){
     });
 }
 
-// Edit button
 function editStudent(studentId){ openModal(true, studentId); }
 
 // Table search
@@ -267,7 +251,6 @@ function refreshStatistics(){
     document.getElementById('statPartial').textContent = partial;
 }
 
-// Open/close modal buttons
 if(addBtn) addBtn.addEventListener('click', () => openModal());
 if(cancelBtn) cancelBtn.addEventListener('click', closeModal);
 </script>
