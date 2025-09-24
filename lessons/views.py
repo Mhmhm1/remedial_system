@@ -255,6 +255,10 @@ def student_payments(request):
     selected_class_id = request.GET.get("class_group", "")
     students = Student.objects.filter(class_group_id=selected_class_id) if selected_class_id else []
 
+    # Compute balance for each student
+    for student in students:
+        student.balance = 1500 - student.amount_paid  # assuming each term fee is 1500
+
     # Record payments
     if request.method == "POST":
         for student in students:
@@ -270,6 +274,7 @@ def student_payments(request):
                             term="Term 1"
                         )
                         student.amount_paid += amount
+                        student.balance = 1500 - student.amount_paid  # update balance
                         student.save()
                 except ValueError:
                     continue
