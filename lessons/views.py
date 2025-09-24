@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from django.conf import settings
 
 from django.db.models import Sum, F, Count, ExpressionWrapper, FloatField
-
+from decimal import Decimal, InvalidOperation
 import os
 
 from .models import (
@@ -244,6 +244,7 @@ def load_timetables(request):
     ]
     return JsonResponse(data, safe=False)
 
+
 @login_required
 def student_payments(request):
     teacher = get_object_or_404(Teacher, user=request.user)
@@ -257,10 +258,9 @@ def student_payments(request):
 
     # Compute statistics
     total_students = students.count()
-    total_paid = sum(student.amount_paid for student in students)
-    total_fee_per_student = 1500  # Default per term
-    total_fees = total_students * total_fee_per_student
-    total_unpaid = total_fees - total_paid
+    total_fee_per_student = Decimal('1500.00')  # assuming each term fee is 1500
+    total_paid = sum(s.amount_paid for s in students)
+    total_unpaid = total_students * total_fee_per_student - total_paid
     fully_paid = sum(1 for s in students if s.amount_paid >= total_fee_per_student)
     partial_paid = sum(1 for s in students if 0 < s.amount_paid < total_fee_per_student)
 
@@ -270,7 +270,7 @@ def student_payments(request):
             amount_str = request.POST.get(f"amount_{student.id}")
             if amount_str:
                 try:
-                    amount = float(amount_str)
+                    amount = Decimal(amount_str)  # Use Decimal to match amount_paid type
                     if amount > 0:
                         StudentPayment.objects.create(
                             student=student,
@@ -278,11 +278,24 @@ def student_payments(request):
                             recorded_by=teacher,
                             term="Term 1"
                         )
-                        student.amount_paid += amount
+                        student.amount_paid += amount  # Decimal + Decimal
                         student.save()
-                except ValueError:
+                except (InvalidOperation, ValueError):
                     continue
         return redirect(f"{request.path}?class_group={selected_class_id}")
+
+    context = {
+        "class_groups": class_groups,
+        "students": students,
+        "selected_class_id": selected_class_id,
+        "total_students": total_students,
+        "total_paid": total_paid,
+        "total_unpaid": total_unpaid,
+        "fully_paid": fully_paid,
+        "partial_paid": partial_paid,
+        "total_fee_per_student": total_fee_per_student,
+    }
+    return render(request, "lessons/student_payments.html", context)
 
     context = {
         "class_groups": class_groups,
