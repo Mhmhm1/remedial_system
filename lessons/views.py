@@ -253,20 +253,24 @@ def student_payments(request):
 
     class_groups = teacher.class_groups.all()
     selected_class_id = request.GET.get("class_group", "")
-    students = Student.objects.filter(class_group_id=selected_class_id) if selected_class_id else []
+    students = list(Student.objects.filter(class_group_id=selected_class_id)) if selected_class_id else []
+
+    term_fee = 1500  # per student
+
+    total_paid = 0
+    fully_paid = 0
+    partial_paid = 0
 
     # Compute balance and statistics
-    total_students = students.count()
-    total_paid = sum(student.amount_paid for student in students)
-    total_fee_per_student = 1500  # assuming each term fee is 1500
-    total_fees = total_students * total_fee_per_student
-    total_unpaid = total_fees - total_paid
-    fully_paid = sum(1 for s in students if s.amount_paid >= total_fee_per_student)
-    partial_paid = sum(1 for s in students if 0 < s.amount_paid < total_fee_per_student)
-
-    # Add balance for each student
     for student in students:
-        student.balance = total_fee_per_student - student.amount_paid
+        student.balance = term_fee - student.amount_paid
+        total_paid += student.amount_paid
+        if student.amount_paid >= term_fee:
+            fully_paid += 1
+        elif student.amount_paid > 0:
+            partial_paid += 1
+
+    total_unpaid = len(students) * term_fee - total_paid
 
     # Record payments
     if request.method == "POST":
@@ -283,7 +287,7 @@ def student_payments(request):
                             term="Term 1"
                         )
                         student.amount_paid += amount
-                        student.balance = total_fee_per_student - student.amount_paid
+                        student.balance = term_fee - student.amount_paid
                         student.save()
                 except ValueError:
                     continue
@@ -293,14 +297,11 @@ def student_payments(request):
         "class_groups": class_groups,
         "students": students,
         "selected_class_id": selected_class_id,
-
-        # statistics
-        "total_students": total_students,
+        "term_fee": term_fee,
         "total_paid": total_paid,
         "total_unpaid": total_unpaid,
         "fully_paid": fully_paid,
         "partial_paid": partial_paid,
-        "total_fee_per_student": total_fee_per_student,
     }
     return render(request, "lessons/student_payments.html", context)
 
