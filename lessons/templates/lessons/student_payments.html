@@ -52,13 +52,13 @@
         </table>
 
         <!-- Statistics panel -->
-        <div id="statistics" style="margin-top:20px; background:#f4f4f4; padding:10px; border-radius:6px;">
-            <strong>Statistics:</strong>
-            <span>Total Students: <span id="statTotal">{{ total_students }}</span></span> |
-            <span>Total Paid: <span id="statPaid">{{ total_paid }}</span></span> |
-            <span>Total Unpaid: <span id="statUnpaid">{{ total_unpaid }}</span></span> |
-            <span>Fully Paid: <span id="statFullyPaid">{{ fully_paid }}</span></span> |
-            <span>Partial: <span id="statPartial">{{ partial_paid }}</span></span>
+    <div id="statistics" style="margin-top:20px; background:#f4f4f4; padding:10px; border-radius:6px;">
+    <strong>Statistics:</strong>
+    <span>Total Students: <span id="statTotal">{{ students|length }}</span></span> |
+    <span>Total Paid: <span id="statPaid">{{ total_paid }}</span></span> |
+    <span>Total Unpaid: <span id="statUnpaid">{{ total_unpaid }}</span></span> |
+    <span>Fully Paid: <span id="statFullyPaid">{{ fully_paid }}</span></span> |
+    <span>Partial: <span id="statPartial">{{ partial_paid }}</span></span>
         </div>
 
     {% else %}
