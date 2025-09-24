@@ -335,7 +335,7 @@ def delete_student_ajax(request, student_id):
         student.delete()
         return JsonResponse({"success": True, "id": student_id})
         
-@staff_member_required
+
 @staff_member_required
 def admin_payments(request):
     selected_class_id = request.GET.get("class")
