@@ -3,11 +3,9 @@
 
 {% block object-tools %}
   {{ block.super }}
-  <ul class="object-tools">
-    <li>
-      <a class="addlink" href="{% url 'admin_payments' %}">
-        💰 Payments Dashboard
-      </a>
-    </li>
-  </ul>
+  <li>
+    <a class="addlink" href="{% url 'admin_payments' %}">
+      💰 Payments Dashboard
+    </a>
+  </li>
 {% endblock %}
