@@ -20,37 +20,47 @@
         <button id="addStudentBtn" style="margin-bottom: 10px;">Add Student</button>
         <input type="text" id="searchInput" class="search-box" placeholder="Search students...">
 
-        <form method="post" id="paymentsForm">
-            {% csrf_token %}
-            <table id="studentTable" class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th onclick="sortTable(0)">First Name ▲▼</th>
-                        <th onclick="sortTable(1)">Last Name</th>
-                        <th onclick="sortTable(2)">Admission No.</th>
-                        <th>Amount Paid</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for student in students %}
-                    <tr data-id="{{ student.id }}">
-                        <td class="first-name">{{ student.first_name }}</td>
-                        <td class="last-name">{{ student.last_name }}</td>
-                        <td class="admission-no">{{ student.admission_number }}</td>
-                        <td>
-                            <input type="number" step="0.01" name="amount_{{ student.id }}" placeholder="Enter amount">
-                        </td>
-                        <td>
-                            <button type="button" class="action-btn" onclick="editStudent({{ student.id }})">Edit</button>
-                            <button type="button" class="delete-btn" onclick="deleteStudent({{ student.id }})">Delete</button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <button type="submit" class="btn btn-success">Submit Payments</button>
-        </form>
+        <table id="studentTable" class="table table-bordered">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)">First Name ▲▼</th>
+                    <th onclick="sortTable(1)">Last Name</th>
+                    <th onclick="sortTable(2)">Admission No.</th>
+                    <th>Amount Paid</th>
+                    <th>Balance</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr data-id="{{ student.id }}">
+                    <td class="first-name">{{ student.first_name }}</td>
+                    <td class="last-name">{{ student.last_name }}</td>
+                    <td class="admission-no">{{ student.admission_number }}</td>
+                    <td>
+                        <input type="number" step="0.01" name="amount_{{ student.id }}" placeholder="Enter amount" 
+                               value="{{ student.amount_paid }}" onchange="updatePayment({{ student.id }}, this.value)">
+                    </td>
+                    <td class="balance">{{ 1500 - student.amount_paid }}</td>
+                    <td>
+                        <button type="button" class="action-btn" onclick="editStudent({{ student.id }})">Edit</button>
+                        <button type="button" class="delete-btn" onclick="deleteStudent({{ student.id }})">Delete</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Statistics panel -->
+        <div id="statistics" style="margin-top:20px; background:#f4f4f4; padding:10px; border-radius:6px;">
+            <strong>Statistics:</strong>
+            <span>Total Students: <span id="statTotal">{{ students|length }}</span></span> |
+            <span>Total Paid: <span id="statPaid">{{ students|sum:"amount_paid" }}</span></span> |
+            <span>Total Unpaid: <span id="statUnpaid">{{ students|sum:"term_fee"|add:-students|sum:"amount_paid" }}</span></span> |
+            <span>Fully Paid: <span id="statFullyPaid">{{ students|filter:"amount_paid__gte=1500"|length }}</span></span> |
+            <span>Partial: <span id="statPartial">{{ students|filter:"amount_paid__gt=0"|exclude:"amount_paid__gte=1500"|length }}</span></span>
+        </div>
+
     {% else %}
         <p>Please select a class to see students.</p>
     {% endif %}
@@ -135,7 +145,8 @@ function refreshRow(student) {
             <td class="first-name">${student.first_name}</td>
             <td class="last-name">${student.last_name}</td>
             <td class="admission-no">${student.admission_number}</td>
-            <td><input type="number" step="0.01" name="amount_${student.id}" placeholder="Enter amount"></td>
+            <td><input type="number" step="0.01" name="amount_${student.id}" placeholder="Enter amount" onchange="updatePayment(${student.id}, this.value)"></td>
+            <td class="balance">1500</td>
             <td>
                 <button type="button" class="action-btn" onclick="editStudent(${student.id})">Edit</button>
                 <button type="button" class="delete-btn" onclick="deleteStudent(${student.id})">Delete</button>
@@ -169,11 +180,7 @@ saveBtn.addEventListener('click', () => {
     fetch(url, {method, body: formData, headers: {'X-CSRFToken': '{{ csrf_token }}'}})
     .then(res => res.json())
     .then(data => {
-        if(editStudentId) {
-            refreshRow({id: data.id, first_name: firstName, last_name: lastName, admission_number: admissionNo});
-        } else {
-            refreshRow({id: data.id, first_name: firstName, last_name: lastName, admission_number: admissionNo});
-        }
+        refreshRow({id: data.id, first_name: firstName, last_name: lastName, admission_number: admissionNo});
         closeModal();
     })
     .catch(err => console.error(err));
@@ -189,6 +196,7 @@ function deleteStudent(studentId) {
         if(data.success) {
             const row = document.querySelector(`tr[data-id="${studentId}"]`);
             row.remove();
+            refreshStatistics();
         }
     });
 }
@@ -204,6 +212,7 @@ if(searchInput) searchInput.addEventListener('input', () => {
         const adm = row.querySelector('.admission-no').textContent.toLowerCase();
         row.style.display = first.includes(filter) || last.includes(filter) || adm.includes(filter) ? '' : 'none';
     });
+    refreshStatistics();
 });
 
 // Table sorting
@@ -215,6 +224,38 @@ function sortTable(colIndex) {
         return valA.localeCompare(valB);
     });
     rows.forEach(r => studentTableBody.appendChild(r));
+}
+
+// Payment update via AJAX
+function updatePayment(studentId, value){
+    const amount = parseFloat(value) || 0;
+    fetch(`/update-payment-ajax/${studentId}/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken':'{{ csrf_token }}', 'Content-Type':'application/x-www-form-urlencoded'},
+        body: `amount=${amount}`
+    }).then(res=>res.json())
+      .then(data=>{
+        const row = document.querySelector(`tr[data-id="${studentId}"]`);
+        row.querySelector('.balance').textContent = (1500 - data.amountPaid).toFixed(2);
+        refreshStatistics();
+      });
+}
+
+// Update statistics dynamically
+function refreshStatistics(){
+    let total = 0, paid=0, fully=0, partial=0;
+    studentTableBody.querySelectorAll('tr').forEach(r=>{
+        if(r.style.display==='none') return;
+        total++;
+        const amt = parseFloat(r.querySelector('input[name^="amount_"]').value) || 0;
+        paid += amt;
+        if(amt>=1500) fully++; else if(amt>0) partial++;
+    });
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statPaid').textContent = paid.toFixed(2);
+    document.getElementById('statUnpaid').textContent = (total*1500 - paid).toFixed(2);
+    document.getElementById('statFullyPaid').textContent = fully;
+    document.getElementById('statPartial').textContent = partial;
 }
 
 if(addBtn) addBtn.addEventListener('click', () => openModal());
